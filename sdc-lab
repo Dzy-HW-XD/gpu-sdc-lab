@@ -1,0 +1,276 @@
+#!/usr/bin/env python3
+"""gpu-sdc-lab command line interface.
+
+Examples
+--------
+  ./sdc-lab doctor
+  ./sdc-lab baseline --experiment 001_gemm_baseline
+  ./sdc-lab run --experiment 002_fault_position
+  ./sdc-lab run --workload gemm --injector nvbitfi \
+      --fault-type bitflip --num-injections 100
+"""
+
+import argparse
+import datetime
+import os
+import sys
+
+LAB_ROOT = os.path.dirname(os.path.realpath(__file__))
+if LAB_ROOT not in sys.path:
+    sys.path.insert(0, LAB_ROOT)
+
+from core import taxonomy                  # noqa: E402
+from core import util                      # noqa: E402
+from core import yamlmini                  # noqa: E402
+from core.config import load_lab_config    # noqa: E402
+from core.injection import available_injectors  # noqa: E402
+from core.runner import Runner             # noqa: E402
+from core.workload import available_workloads   # noqa: E402
+
+
+def _experiments_dir(lab):
+    return os.path.join(lab.root, "experiments")
+
+
+def _load_experiment(lab, eid):
+    path = os.path.join(_experiments_dir(lab), eid, "experiment.yaml")
+    if not os.path.exists(path):
+        raise SystemExit("experiment '%s' not found (%s)" % (eid, path))
+    data = yamlmini.load(path) or {}
+    data.setdefault("id", eid)
+    data["_source"] = os.path.join("experiments", eid, "experiment.yaml")
+    return data
+
+
+def _overrides(args):
+    o = {}
+    for key in ("kind", "injector", "group", "fault_type", "seed"):
+        v = getattr(args, key, None)
+        if v is not None:
+            o[key] = v
+    for key in ("num_injections", "positions", "injections_per_position",
+                "injections_per_type", "injections_per_bit",
+                "injections_per_pattern", "repeats", "id"):
+        v = getattr(args, key, None)
+        if v is not None:
+            o[key] = v
+    if getattr(args, "bits", None):
+        o["bits"] = [int(b) for b in args.bits.split(",")]
+    if getattr(args, "fault_types", None):
+        o["fault_types"] = [s.strip() for s in args.fault_types.split(",")]
+    if getattr(args, "patterns", None):
+        o["patterns"] = [s.strip() for s in args.patterns.split(",")]
+    wl = {}
+    for key in ("M", "N", "K", "dtype", "pattern"):
+        v = getattr(args, key, None)
+        if v is not None:
+            wl[key] = v
+    if wl:
+        o["workload_params"] = wl
+    return o
+
+
+def cmd_doctor(lab, args):
+    print("== gpu-sdc-lab doctor ==")
+    print("lab_root     :", lab.root)
+    print("python       :", sys.version.split()[0])
+    print("gpu index    :", lab.gpu)
+    print("cuda_home    :", lab.cuda_home, "(exists=%s)" % os.path.exists(lab.cuda_home))
+    print("injector_lib :", lab.injector_lib, "(exists=%s)" % os.path.exists(lab.injector_lib))
+    print("profiler_lib :", lab.profiler_lib, "(exists=%s)" % os.path.exists(lab.profiler_lib))
+    print("workloads    :", ", ".join(available_workloads()))
+    print("injectors    :", ", ".join(available_injectors()))
+
+    nvcc = os.path.join(lab.cuda_home, "bin", "nvcc")
+    if os.path.exists(nvcc):
+        r = util.run_cmd([nvcc, "--version"], timeout=30)
+        line = [l for l in r["stdout"].splitlines() if "release" in l]
+        print("nvcc         :", line[-1].strip() if line else "?")
+    r = util.run_cmd(
+        ["nvidia-smi", "-i", str(lab.gpu),
+         "--query-gpu=index,name,uuid,driver_version,memory.total,memory.used,"
+         "memory.free,compute_cap", "--format=csv,noheader"],
+        timeout=30,
+    )
+    print("nvidia-smi   :", r["stdout"].strip() or r["stderr"].strip())
+    nvdisasm = os.path.join(lab.cuda_home, "bin", "nvdisasm")
+    r = util.run_cmd([nvdisasm, "--version"], timeout=30)
+    print("nvdisasm     :", (r["stdout"] + r["stderr"]).splitlines()[0] if (r["stdout"] + r["stderr"]) else "MISSING")
+    return 0
+
+
+def cmd_taxonomy(lab, args):
+    print(taxonomy.printable())
+    return 0
+
+
+def cmd_list(lab, args):
+    print("workloads  :", ", ".join(available_workloads()))
+    print("injectors  :", ", ".join(available_injectors()))
+    edir = _experiments_dir(lab)
+    if os.path.isdir(edir):
+        exps = sorted(d for d in os.listdir(edir)
+                      if os.path.isfile(os.path.join(edir, d, "experiment.yaml")))
+        print("experiments:")
+        for e in exps:
+            print("   ", e)
+    return 0
+
+
+def _resolve_experiment(lab, args):
+    if args.experiment:
+        expt = _load_experiment(lab, args.experiment)
+    else:
+        expt = {}
+    expt.update(_overrides(args))
+    expt.setdefault("workload", args.workload or "gemm")
+    expt.setdefault("injector", "nvbitfi")
+    expt.setdefault("kind", "uniform")
+    if not expt.get("id"):
+        expt["id"] = "adhoc_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    return expt
+
+
+def cmd_baseline(lab, args):
+    runner = Runner(lab)
+    expt = _resolve_experiment(lab, args)
+    expt["kind"] = "baseline"
+    expt.setdefault("repeats", 10)
+    print("== baseline %s ==" % expt["id"])
+    dist = runner.run_baseline(expt)
+    print("baseline distribution:", dist)
+    return 0
+
+
+def cmd_run(lab, args):
+    runner = Runner(lab)
+    expt = _resolve_experiment(lab, args)
+    if expt.get("kind") == "baseline":
+        return cmd_baseline(lab, args)
+    print("== run %s (kind=%s, workload=%s, injector=%s) =="
+          % (expt["id"], expt["kind"], expt["workload"], expt["injector"]))
+    result = runner.run_fault(expt)
+    c = result["counts"]
+    print("\n===== RESULT =====")
+    print("Total   :", c["MASKED"] + c["SDC"] + c["CRASH"])
+    print("Masked  :", c["MASKED"])
+    print("SDC     :", c["SDC"])
+    print("Crash   :", c["CRASH"])
+    print("NotInj  :", c["NOT_INJECTED"])
+    print("SDC rate: %.4f" % c["sdc_rate"])
+    print("Results :", os.path.join(lab.results_dir, expt["id"]))
+    return 0
+
+
+def cmd_gen_input(lab, args):
+    from core import inputgen
+    spec = {"gen": args.gen, "seed": args.seed}
+    for k, v in (("path", args.path), ("zero_frac", args.zero_frac),
+                 ("magnitude", args.magnitude), ("sigma", args.sigma),
+                 ("period", args.period)):
+        if v is not None:
+            spec[k] = v
+    path = inputgen.materialize(spec, args.n, args.out)
+    import os as _os
+    print("wrote %s (%d floats, %.1f MB)" % (path, args.n, _os.path.getsize(path) / 1e6))
+    return 0
+
+
+def cmd_profile(lab, args):
+    from core.workload import get_workload
+    from core.injection import get_injector
+    params = {}
+    for key in ("M", "N", "K", "dtype", "pattern"):
+        v = getattr(args, key, None)
+        if v is not None:
+            params[key] = v
+    name = getattr(args, "workload", None) or "gemm"
+    wl = get_workload(name, params, lab)
+    wl.prepare()
+    inj = get_injector("nvbitfi", lab)
+    print("workload=%s params=%s" % (name, wl.params))
+    wd = os.path.join(lab.results_dir, "_profile_cli", name)
+    if os.path.isdir(wd):
+        import shutil as _sh
+        _sh.rmtree(wd)
+    util.ensure_dir(wd)
+    prof = inj.profile(wl, wd)
+    for r in prof["runs"]:
+        print("index=%(index)s ctas=%(ctas)s instrs=%(instrs)s name=%(name)s" % r)
+        print("   groups:", r["groups"])
+    return 0
+
+
+def build_parser():
+    p = argparse.ArgumentParser(prog="sdc-lab", description="GPU SDC Lab")
+    p.add_argument("--lab-config", default=os.path.join(LAB_ROOT, "config.yaml"))
+    p.add_argument("--gpu", type=int, default=None)
+    sub = p.add_subparsers(dest="cmd")
+
+    def add_common(sp):
+        sp.add_argument("--experiment")
+        sp.add_argument("--workload")
+        sp.add_argument("--injector")
+        sp.add_argument("--kind")
+        sp.add_argument("--fault-type", dest="fault_type")
+        sp.add_argument("--fault-types", dest="fault_types")
+        sp.add_argument("--num-injections", dest="num_injections", type=int)
+        sp.add_argument("--group")
+        sp.add_argument("--positions", type=int)
+        sp.add_argument("--injections-per-position", dest="injections_per_position", type=int)
+        sp.add_argument("--injections-per-type", dest="injections_per_type", type=int)
+        sp.add_argument("--injections-per-bit", dest="injections_per_bit", type=int)
+        sp.add_argument("--injections-per-pattern", dest="injections_per_pattern", type=int)
+        sp.add_argument("--bits")
+        sp.add_argument("--patterns")
+        sp.add_argument("--repeats", type=int)
+        sp.add_argument("--seed", type=int)
+        sp.add_argument("--id")
+        sp.add_argument("--M", type=int)
+        sp.add_argument("--N", type=int)
+        sp.add_argument("--K", type=int)
+        sp.add_argument("--dtype")
+        sp.add_argument("--pattern")
+
+    sp = sub.add_parser("doctor")
+    sp.set_defaults(func=cmd_doctor)
+    sp = sub.add_parser("list")
+    sp.set_defaults(func=cmd_list)
+    sp = sub.add_parser("taxonomy")
+    sp.set_defaults(func=cmd_taxonomy)
+    sp = sub.add_parser("gen-input")
+    sp.add_argument("--gen", default="normal")
+    sp.add_argument("--n", type=int, default=1048576)
+    sp.add_argument("--seed", type=int, default=1234)
+    sp.add_argument("--out", required=True)
+    sp.add_argument("--path")
+    sp.add_argument("--zero-frac", dest="zero_frac", type=float)
+    sp.add_argument("--magnitude", type=float)
+    sp.add_argument("--sigma", type=float)
+    sp.add_argument("--period", type=int)
+    sp.set_defaults(func=cmd_gen_input)
+    sp = sub.add_parser("baseline")
+    add_common(sp)
+    sp.set_defaults(func=cmd_baseline)
+    sp = sub.add_parser("run")
+    add_common(sp)
+    sp.set_defaults(func=cmd_run)
+    sp = sub.add_parser("profile")
+    add_common(sp)
+    sp.set_defaults(func=cmd_profile)
+    return p
+
+
+def main(argv=None):
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if not getattr(args, "cmd", None):
+        parser.print_help()
+        return 2
+    overrides = {"gpu": args.gpu} if args.gpu is not None else None
+    lab = load_lab_config(args.lab_config, overrides)
+    return args.func(lab, args)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

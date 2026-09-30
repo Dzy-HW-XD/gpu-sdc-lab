@@ -1,0 +1,14 @@
+id: 010_input_sensitivity_softmax
+kind: input_sensitivity
+workload: softmax
+injector: nvbitfi
+groups: [arithmetic/fp32, memory/load, meta/other, meta/gp]
+fault_type: bitflip
+inputs: [uniform, normal, lognormal, sparse, near_overflow, adversarial]
+injections_per_input: 20
+input_seed: 1234
+dimension: input
+seed: 20261012
+workload_params:
+  R: 512
+  C: 1024

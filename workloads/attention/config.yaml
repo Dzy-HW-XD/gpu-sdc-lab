@@ -1,0 +1,5 @@
+# Attention workload (single head, explicit math, Q/K/V packed in X [S,3D])
+S: 128
+D: 64
+dtype: fp32
+seed: 1234

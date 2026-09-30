@@ -1,0 +1,7 @@
+{
+  "repeats": 5,
+  "id": "reduce_baseline",
+  "workload": "reduce",
+  "injector": "nvbitfi",
+  "kind": "baseline"
+}

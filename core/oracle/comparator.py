@@ -1,0 +1,175 @@
+"""Output comparison oracle (pure stdlib).
+
+Computes the numerical-distance metrics required by the SDC lab:
+  max_abs_error, mean_abs_error, relative_l2_error,
+  corrupted_element_count, corrupted_element_ratio, nan_count, inf_count.
+
+A bitwise hash fast-path avoids element-wise work for the common MASKED case.
+"""
+
+import array
+import math
+import os
+
+from core import util
+
+
+def read_floats(path):
+    a = array.array("f")
+    with open(path, "rb") as f:
+        a.fromfile(f, os.path.getsize(path) // a.itemsize)
+    return a
+
+
+def _empty_metrics(total):
+    return {
+        "total_elements": total,
+        "fault_elements": total,
+        "max_abs_error": 0.0,
+        "mean_abs_error": 0.0,
+        "relative_l2_error": 0.0,
+        "corrupted_elements": 0,
+        "corrupted_element_ratio": 0.0,
+        "nan_count": 0,
+        "inf_count": 0,
+        "length_mismatch": False,
+        "output_missing": False,
+        "bitwise_equal": True,
+    }
+
+
+AGG_KEYS = ("total_elements", "fault_elements", "max_abs_error", "mean_abs_error",
+            "relative_l2_error", "corrupted_elements", "corrupted_element_ratio",
+            "nan_count", "inf_count", "length_mismatch", "output_missing",
+            "bitwise_equal")
+
+
+def compare_outputs(golden_prefix, fault_prefix, specs, abs_tol=0.0, rel_tol=0.0):
+    """Compare every output in `specs` (each {"name","suffix","format"[,tol]}).
+
+    Returns aggregate metrics plus a per-output breakdown.
+    """
+    per = {}
+    agg = {
+        "total_elements": 0, "fault_elements": 0, "max_abs_error": 0.0,
+        "sum_abs": 0.0, "sumsq_d": 0.0, "sumsq_g": 0.0,
+        "corrupted_elements": 0, "nan_count": 0, "inf_count": 0,
+        "length_mismatch": False, "output_missing": False, "bitwise_equal": True,
+    }
+    for s in specs:
+        name = s["name"]
+        gpath = golden_prefix + s["suffix"]
+        fpath = fault_prefix + s["suffix"]
+        tol = s.get("tol") or {}
+        m = compare(gpath, fpath, tol.get("abs", abs_tol), tol.get("rel", rel_tol))
+        per[name] = m
+        agg["total_elements"] += m["total_elements"]
+        agg["fault_elements"] += m["fault_elements"]
+        agg["max_abs_error"] = max(agg["max_abs_error"], m["max_abs_error"])
+        agg["corrupted_elements"] += m["corrupted_elements"]
+        agg["nan_count"] += m["nan_count"]
+        agg["inf_count"] += m["inf_count"]
+        agg["length_mismatch"] = agg["length_mismatch"] or m["length_mismatch"]
+        agg["output_missing"] = agg["output_missing"] or m["output_missing"]
+        agg["bitwise_equal"] = agg["bitwise_equal"] and m["bitwise_equal"]
+        # accumulate weighted sums for mean / rel-L2
+        n = m["total_elements"]
+        agg["sum_abs"] += m["mean_abs_error"] * n
+        agg["sumsq_d"] += (m["relative_l2_error"] ** 2)  # not exact; refined below
+
+    total = agg["total_elements"]
+    out = {
+        "total_elements": total,
+        "fault_elements": agg["fault_elements"],
+        "max_abs_error": agg["max_abs_error"],
+        "mean_abs_error": (agg["sum_abs"] / total) if total else 0.0,
+        "relative_l2_error": _agg_rel_l2(per),
+        "corrupted_elements": agg["corrupted_elements"],
+        "corrupted_element_ratio": (float(agg["corrupted_elements"]) / total) if total else 0.0,
+        "nan_count": agg["nan_count"],
+        "inf_count": agg["inf_count"],
+        "length_mismatch": agg["length_mismatch"],
+        "output_missing": agg["output_missing"],
+        "bitwise_equal": agg["bitwise_equal"],
+        "per_output": per,
+    }
+    return out
+
+
+def _agg_rel_l2(per):
+    # exact aggregation of relative L2 requires raw sums; recompute conservatively
+    # from per-output rel-L2 (upper bound of the combined error).
+    vals = [m["relative_l2_error"] for m in per.values() if m["total_elements"]]
+    return max(vals) if vals else 0.0
+
+
+def compare(golden_bin, fault_bin, abs_tol=0.0, rel_tol=0.0):
+    if not os.path.exists(fault_bin):
+        m = _empty_metrics(0)
+        m.update({"output_missing": True, "bitwise_equal": False,
+                  "corrupted_elements": 1, "corrupted_element_ratio": 1.0})
+        return m
+
+    golden = read_floats(golden_bin)
+    total = len(golden)
+
+    if util.sha256_file(golden_bin) == util.sha256_file(fault_bin):
+        return _empty_metrics(total)
+
+    fault = read_floats(fault_bin)
+
+    length_mismatch = len(fault) != total
+    n = min(len(fault), total)
+
+    max_abs = 0.0
+    sum_abs = 0.0
+    sumsq_d = 0.0
+    sumsq_g = 0.0
+    corrupted = 0
+    nan_count = 0
+    inf_count = 0
+
+    for i in range(n):
+        gv = golden[i]
+        fv = fault[i]
+        if fv != fv:  # NaN
+            nan_count += 1
+            corrupted += 1
+            continue
+        if fv == math.inf or fv == -math.inf:
+            inf_count += 1
+            corrupted += 1
+            continue
+        d = fv - gv
+        ad = d if d >= 0.0 else -d
+        sum_abs += ad
+        if ad > max_abs:
+            max_abs = ad
+        sumsq_d += d * d
+        sumsq_g += gv * gv
+        if ad > (abs_tol + rel_tol * (gv if gv >= 0 else -gv)):
+            corrupted += 1
+
+    if length_mismatch:
+        corrupted += abs(len(fault) - total)
+
+    mean_abs = sum_abs / n if n else 0.0
+    if sumsq_g > 0.0:
+        rel_l2 = math.sqrt(sumsq_d / sumsq_g)
+    else:
+        rel_l2 = math.sqrt(sumsq_d)
+
+    return {
+        "total_elements": total,
+        "fault_elements": len(fault),
+        "max_abs_error": max_abs,
+        "mean_abs_error": mean_abs,
+        "relative_l2_error": rel_l2,
+        "corrupted_elements": corrupted,
+        "corrupted_element_ratio": (float(corrupted) / total) if total else 0.0,
+        "nan_count": nan_count,
+        "inf_count": inf_count,
+        "length_mismatch": length_mismatch,
+        "output_missing": False,
+        "bitwise_equal": False,
+    }

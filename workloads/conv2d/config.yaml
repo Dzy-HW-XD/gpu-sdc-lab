@@ -1,0 +1,8 @@
+# Conv2d workload (direct 2D convolution, NCHW, N=1)
+Cin: 8
+Cout: 16
+H: 32
+W: 32
+kernel: 3
+dtype: fp32
+seed: 1234

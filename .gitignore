@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Build artifacts / third-party (rebuilt by scripts/setup_nvbitfi.sh)
+third_party/
+*.o
+*.so
+
+# Compiled workload binaries (Linux ELF, built by scripts/build.sh)
+workloads/gemm/gemm
+workloads/reduce/reduce
+workloads/conv2d/conv2d
+workloads/softmax/softmax
+workloads/attention/attention
+workloads/mlp/mlp
+
+# Large / regenerable results (summaries and observations.jsonl are kept)
+results/raw/
+results/_golden/
+results/_profile/
+results/_inputs/
+*.bin
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

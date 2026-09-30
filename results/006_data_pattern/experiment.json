@@ -1,0 +1,83 @@
+{
+  "config": {
+    "id": "006_data_pattern",
+    "kind": "data_pattern",
+    "workload": "gemm",
+    "injector": "nvbitfi",
+    "group": "fp32",
+    "fault_type": "bitflip",
+    "patterns": [
+      "normal",
+      "small",
+      "large",
+      "near_zero",
+      "mixed"
+    ],
+    "injections_per_pattern": 20,
+    "seed": 20261005,
+    "workload_params": {
+      "M": 1024,
+      "N": 1024,
+      "K": 1024,
+      "dtype": "fp32",
+      "seed": 1234
+    },
+    "_source": "experiments/006_data_pattern/experiment.yaml"
+  },
+  "counts": {
+    "MASKED": 4,
+    "SDC": 92,
+    "CRASH": 4,
+    "NOT_INJECTED": 0,
+    "total": 100,
+    "sdc_rate": 0.92
+  },
+  "dimension": "pattern",
+  "dimension_rows": [
+    {
+      "pattern": "large",
+      "total": 20,
+      "masked": 0,
+      "sdc": 20,
+      "crash": 0,
+      "not_injected": 0,
+      "sdc_rate": 1.0
+    },
+    {
+      "pattern": "mixed",
+      "total": 20,
+      "masked": 2,
+      "sdc": 18,
+      "crash": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "pattern": "near_zero",
+      "total": 20,
+      "masked": 0,
+      "sdc": 19,
+      "crash": 1,
+      "not_injected": 0,
+      "sdc_rate": 0.95
+    },
+    {
+      "pattern": "normal",
+      "total": 20,
+      "masked": 0,
+      "sdc": 18,
+      "crash": 2,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "pattern": "small",
+      "total": 20,
+      "masked": 2,
+      "sdc": 17,
+      "crash": 1,
+      "not_injected": 0,
+      "sdc_rate": 0.85
+    }
+  ]
+}

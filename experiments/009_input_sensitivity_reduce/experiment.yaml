@@ -1,0 +1,15 @@
+id: 009_input_sensitivity_reduce
+kind: input_sensitivity
+workload: reduce
+injector: nvbitfi
+groups: [memory/atomic, arithmetic/fp32, memory/load, meta/gp]
+fault_type: bitflip
+inputs: [uniform, normal, lognormal, cancellation, near_overflow, adversarial]
+injections_per_input: 20
+input_seed: 1234
+dimension: input
+seed: 20261011
+workload_params:
+  N: 1048576
+  blocks: 256
+  threads: 256

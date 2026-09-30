@@ -1,0 +1,7 @@
+# Mini-training workload (2-layer MLP forward + one backward step)
+B: 64
+D: 64
+H: 128
+O: 10
+dtype: fp32
+seed: 1234

@@ -1,0 +1,23 @@
+{
+  "id": "007_reduce_atomic",
+  "kind": "uniform",
+  "workload": "reduce",
+  "injector": "nvbitfi",
+  "groups": [
+    "memory/atomic",
+    "arithmetic/fp32",
+    "memory/load",
+    "meta/gp"
+  ],
+  "fault_type": "bitflip",
+  "num_injections": 60,
+  "dimension": "target",
+  "seed": 20261006,
+  "workload_params": {
+    "N": 1048576,
+    "blocks": 256,
+    "threads": 256,
+    "seed": 1234
+  },
+  "_source": "experiments/007_reduce_atomic/experiment.yaml"
+}

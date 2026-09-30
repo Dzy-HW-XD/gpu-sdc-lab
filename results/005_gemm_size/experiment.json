@@ -1,0 +1,87 @@
+{
+  "config": {
+    "id": "005_gemm_size",
+    "kind": "gemm_size",
+    "workload": "gemm",
+    "injector": "nvbitfi",
+    "group": "fp32",
+    "fault_type": "bitflip",
+    "sizes": [
+      [
+        256,
+        256,
+        256
+      ],
+      [
+        512,
+        512,
+        512
+      ],
+      [
+        1024,
+        1024,
+        1024
+      ],
+      [
+        2048,
+        2048,
+        2048
+      ]
+    ],
+    "injections_per_size": 10,
+    "seed": 20261004,
+    "workload_params": {
+      "dtype": "fp32",
+      "seed": 1234,
+      "pattern": "normal"
+    },
+    "_source": "experiments/005_gemm_size/experiment.yaml"
+  },
+  "counts": {
+    "MASKED": 0,
+    "SDC": 32,
+    "CRASH": 8,
+    "NOT_INJECTED": 0,
+    "total": 40,
+    "sdc_rate": 0.8
+  },
+  "dimension": "size",
+  "dimension_rows": [
+    {
+      "size": "1024x1024x1024",
+      "total": 10,
+      "masked": 0,
+      "sdc": 8,
+      "crash": 2,
+      "not_injected": 0,
+      "sdc_rate": 0.8
+    },
+    {
+      "size": "2048x2048x2048",
+      "total": 10,
+      "masked": 0,
+      "sdc": 5,
+      "crash": 5,
+      "not_injected": 0,
+      "sdc_rate": 0.5
+    },
+    {
+      "size": "256x256x256",
+      "total": 10,
+      "masked": 0,
+      "sdc": 9,
+      "crash": 1,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "size": "512x512x512",
+      "total": 10,
+      "masked": 0,
+      "sdc": 10,
+      "crash": 0,
+      "not_injected": 0,
+      "sdc_rate": 1.0
+    }
+  ]
+}

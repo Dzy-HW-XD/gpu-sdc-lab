@@ -1,0 +1,19 @@
+# gpu-sdc-lab global configuration.
+# All paths are relative to this project (gpu-sdc-lab/); the project can be
+# moved anywhere. cuda_home is optional: if omitted it is auto-detected from
+# $CUDA_HOME / nvcc on PATH / /usr/local/cuda*.
+gpu: 1
+# cuda_home: /path/to/cuda      # optional; auto-detected if omitted
+nvbit_home: third_party/nvbit_release_x86_64
+nvbitfi_home: third_party/nvbit_release_x86_64/tools/nvbitfi
+injector_lib: third_party/nvbit_release_x86_64/tools/nvbitfi/injector/injector.so
+profiler_lib: third_party/nvbit_release_x86_64/tools/nvbitfi/profiler/profiler.so
+results_dir: results
+oracle:
+  abs_tol: 0.0
+  rel_tol: 0.0
+  nan_inf_dominant_ratio: 0.5
+runtime:
+  default_timeout: 60
+  profile_timeout: 1800
+  nvbit_arch: sm_80

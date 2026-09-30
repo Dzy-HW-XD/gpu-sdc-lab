@@ -1,0 +1,15 @@
+id: 003_fault_type
+kind: fault_type
+workload: gemm
+injector: nvbitfi
+group: fp32
+fault_types: [bitflip, twobit, random, zero]
+injections_per_type: 25
+seed: 20261002
+workload_params:
+  M: 1024
+  N: 1024
+  K: 1024
+  dtype: fp32
+  seed: 1234
+  pattern: normal

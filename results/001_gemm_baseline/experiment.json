@@ -1,0 +1,25 @@
+{
+  "config": {
+    "id": "001_gemm_baseline",
+    "kind": "baseline",
+    "workload": "gemm",
+    "repeats": 10,
+    "workload_params": {
+      "M": 1024,
+      "N": 1024,
+      "K": 1024,
+      "dtype": "fp32",
+      "seed": 1234,
+      "pattern": "normal"
+    },
+    "_source": "experiments/001_gemm_baseline/experiment.yaml",
+    "injector": "nvbitfi"
+  },
+  "baseline_distribution": {
+    "repeats": 10,
+    "bitwise_identical_runs": 10,
+    "max_abs_error_max": 0.0,
+    "relative_l2_error_max": 0.0,
+    "deterministic": true
+  }
+}

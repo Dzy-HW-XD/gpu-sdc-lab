@@ -1,0 +1,5 @@
+fault_type,total,masked,sdc,crash,not_injected,sdc_rate
+bitflip,25,1,24,0,0,0.960000
+random,25,1,22,2,0,0.880000
+twobit,25,0,25,0,0,1.000000
+zero,25,4,21,0,0,0.840000

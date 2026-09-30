@@ -1,0 +1,6 @@
+pattern,total,masked,sdc,crash,not_injected,sdc_rate
+large,20,0,20,0,0,1.000000
+mixed,20,2,18,0,0,0.900000
+near_zero,20,0,19,1,0,0.950000
+normal,20,0,18,2,0,0.900000
+small,20,2,17,1,0,0.850000

@@ -1,0 +1,8 @@
+# GEMM workload parameters (C = A x B, row-major, FP32)
+M: 1024
+N: 1024
+K: 1024
+dtype: fp32
+seed: 1234
+pattern: normal     # normal | small | large | near_zero | mixed
+block: [16, 16]     # threads per block

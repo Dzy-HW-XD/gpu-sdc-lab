@@ -1,0 +1,17 @@
+id: 008_input_sensitivity_gemm
+kind: input_sensitivity
+workload: gemm
+injector: nvbitfi
+groups: [arithmetic/fp32, memory/load, meta/gp]
+fault_type: bitflip
+inputs: [uniform, normal, lognormal, sparse, cancellation, near_overflow, correlated, adversarial]
+injections_per_input: 20
+input_seed: 1234
+dimension: input
+seed: 20261010
+# real_path: /path/to/real_tensor.bin   # optional 9th family "real"
+workload_params:
+  M: 512
+  N: 512
+  K: 512
+  dtype: fp32

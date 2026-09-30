@@ -1,0 +1,5 @@
+target,total,masked,sdc,crash,not_targeted,not_injected,sdc_rate
+arithmetic/fp32,15,4,11,0,0,0,0.733333
+memory/atomic,15,15,0,0,0,0,0.000000
+memory/load,15,5,10,0,0,0,0.666667
+meta/gp,15,6,6,3,0,0,0.400000

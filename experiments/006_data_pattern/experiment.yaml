@@ -1,0 +1,15 @@
+id: 006_data_pattern
+kind: data_pattern
+workload: gemm
+injector: nvbitfi
+group: fp32
+fault_type: bitflip
+patterns: [normal, small, large, near_zero, mixed]
+injections_per_pattern: 20
+seed: 20261005
+workload_params:
+  M: 1024
+  N: 1024
+  K: 1024
+  dtype: fp32
+  seed: 1234

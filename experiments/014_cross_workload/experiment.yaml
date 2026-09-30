@@ -1,0 +1,18 @@
+id: 014_cross_workload
+kind: cross_workload
+injector: nvbitfi
+workloads: [gemm, reduce, conv2d, softmax, attention, mlp]
+input_family: normal
+groups: [arithmetic/fp32, memory/load, meta/gp]
+fault_type: bitflip
+injections_per_workload: 20
+input_seed: 1234
+dimension: workload
+seed: 20261016
+workload_params:
+  gemm: {M: 512, N: 512, K: 512}
+  reduce: {N: 1048576, blocks: 256, threads: 256}
+  conv2d: {Cin: 8, Cout: 16, H: 32, W: 32, kernel: 3}
+  softmax: {R: 512, C: 1024}
+  attention: {S: 128, D: 64}
+  mlp: {B: 64, D: 64, H: 128, O: 10}

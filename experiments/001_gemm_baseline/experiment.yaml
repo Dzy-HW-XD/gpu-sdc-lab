@@ -1,0 +1,11 @@
+id: 001_gemm_baseline
+kind: baseline
+workload: gemm
+repeats: 10
+workload_params:
+  M: 1024
+  N: 1024
+  K: 1024
+  dtype: fp32
+  seed: 1234
+  pattern: normal

@@ -1,0 +1,16 @@
+id: 002_fault_position
+kind: fault_position
+workload: gemm
+injector: nvbitfi
+groups: [fp32, ld, gp]
+fault_type: bitflip
+positions: 5
+injections_per_position: 20
+seed: 20261001
+workload_params:
+  M: 1024
+  N: 1024
+  K: 1024
+  dtype: fp32
+  seed: 1234
+  pattern: normal

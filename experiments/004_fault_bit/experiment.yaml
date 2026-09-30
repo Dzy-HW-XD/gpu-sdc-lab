@@ -1,0 +1,16 @@
+id: 004_fault_bit
+kind: fault_bit
+workload: gemm
+injector: nvbitfi
+group: fp32
+fault_type: bitflip
+bits: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+injections_per_bit: 3
+seed: 20261003
+workload_params:
+  M: 1024
+  N: 1024
+  K: 1024
+  dtype: fp32
+  seed: 1234
+  pattern: normal

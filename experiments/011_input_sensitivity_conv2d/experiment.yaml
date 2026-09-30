@@ -1,0 +1,17 @@
+id: 011_input_sensitivity_conv2d
+kind: input_sensitivity
+workload: conv2d
+injector: nvbitfi
+groups: [arithmetic/fp32, memory/load, meta/gp]
+fault_type: bitflip
+inputs: [uniform, normal, lognormal, sparse, cancellation, adversarial]
+injections_per_input: 20
+input_seed: 1234
+dimension: input
+seed: 20261013
+workload_params:
+  Cin: 8
+  Cout: 16
+  H: 32
+  W: 32
+  kernel: 3

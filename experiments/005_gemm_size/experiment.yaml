@@ -1,0 +1,13 @@
+id: 005_gemm_size
+kind: gemm_size
+workload: gemm
+injector: nvbitfi
+group: fp32
+fault_type: bitflip
+sizes: [[256,256,256],[512,512,512],[1024,1024,1024],[2048,2048,2048]]
+injections_per_size: 10
+seed: 20261004
+workload_params:
+  dtype: fp32
+  seed: 1234
+  pattern: normal

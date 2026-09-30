@@ -1,0 +1,14 @@
+id: 012_input_sensitivity_attention
+kind: input_sensitivity
+workload: attention
+injector: nvbitfi
+groups: [arithmetic/fp32, memory/load, meta/other, meta/gp]
+fault_type: bitflip
+inputs: [uniform, normal, lognormal, sparse, near_overflow, adversarial]
+injections_per_input: 20
+input_seed: 1234
+dimension: input
+seed: 20261014
+workload_params:
+  S: 128
+  D: 64

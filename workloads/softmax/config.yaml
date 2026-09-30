@@ -1,0 +1,5 @@
+# Softmax workload (row-wise)
+R: 1024
+C: 1024
+dtype: fp32
+seed: 1234

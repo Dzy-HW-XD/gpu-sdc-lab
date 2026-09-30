@@ -1,0 +1,8 @@
+metric,value
+total,60
+MASKED,30
+SDC,27
+CRASH,3
+NOT_TARGETED,0
+NOT_INJECTED,0
+sdc_rate,0.450000

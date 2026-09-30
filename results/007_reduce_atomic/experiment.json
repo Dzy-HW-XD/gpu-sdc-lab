@@ -1,0 +1,153 @@
+{
+  "config": {
+    "id": "007_reduce_atomic",
+    "kind": "uniform",
+    "workload": "reduce",
+    "injector": "nvbitfi",
+    "groups": [
+      "memory/atomic",
+      "arithmetic/fp32",
+      "memory/load",
+      "meta/gp"
+    ],
+    "fault_type": "bitflip",
+    "num_injections": 60,
+    "dimension": "target",
+    "seed": 20261006,
+    "workload_params": {
+      "N": 1048576,
+      "blocks": 256,
+      "threads": 256,
+      "seed": 1234
+    },
+    "_source": "experiments/007_reduce_atomic/experiment.yaml"
+  },
+  "counts": {
+    "MASKED": 30,
+    "SDC": 27,
+    "CRASH": 3,
+    "NOT_INJECTED": 0,
+    "NOT_TARGETED": 0,
+    "total": 60,
+    "sdc_rate": 0.45
+  },
+  "dimension": "target",
+  "dimension_rows": [
+    {
+      "target": "arithmetic/fp32",
+      "total": 15,
+      "masked": 4,
+      "sdc": 11,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.7333333333333333
+    },
+    {
+      "target": "memory/atomic",
+      "total": 15,
+      "masked": 15,
+      "sdc": 0,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.0
+    },
+    {
+      "target": "memory/load",
+      "total": 15,
+      "masked": 5,
+      "sdc": 10,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.6666666666666666
+    },
+    {
+      "target": "meta/gp",
+      "total": 15,
+      "masked": 6,
+      "sdc": 6,
+      "crash": 3,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.4
+    }
+  ],
+  "rollups": {
+    "target_summary": [
+      {
+        "target": "arithmetic/fp32",
+        "total": 15,
+        "masked": 4,
+        "sdc": 11,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.7333333333333333
+      },
+      {
+        "target": "memory/atomic",
+        "total": 15,
+        "masked": 15,
+        "sdc": 0,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.0
+      },
+      {
+        "target": "memory/load",
+        "total": 15,
+        "masked": 5,
+        "sdc": 10,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.6666666666666666
+      },
+      {
+        "target": "meta/gp",
+        "total": 15,
+        "masked": 6,
+        "sdc": 6,
+        "crash": 3,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.4
+      }
+    ],
+    "category_summary": [
+      {
+        "category": "arithmetic",
+        "total": 15,
+        "masked": 4,
+        "sdc": 11,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.7333333333333333
+      },
+      {
+        "category": "memory",
+        "total": 30,
+        "masked": 20,
+        "sdc": 10,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.3333333333333333
+      },
+      {
+        "category": "meta",
+        "total": 15,
+        "masked": 6,
+        "sdc": 6,
+        "crash": 3,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.4
+      }
+    ]
+  }
+}

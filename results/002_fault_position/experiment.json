@@ -1,0 +1,82 @@
+{
+  "config": {
+    "id": "002_fault_position",
+    "kind": "fault_position",
+    "workload": "gemm",
+    "injector": "nvbitfi",
+    "groups": [
+      "fp32",
+      "ld",
+      "gp"
+    ],
+    "fault_type": "bitflip",
+    "positions": 5,
+    "injections_per_position": 20,
+    "seed": 20261001,
+    "workload_params": {
+      "M": 1024,
+      "N": 1024,
+      "K": 1024,
+      "dtype": "fp32",
+      "seed": 1234,
+      "pattern": "normal"
+    },
+    "_source": "experiments/002_fault_position/experiment.yaml"
+  },
+  "counts": {
+    "MASKED": 6,
+    "SDC": 82,
+    "CRASH": 12,
+    "NOT_INJECTED": 0,
+    "total": 100,
+    "sdc_rate": 0.82
+  },
+  "dimension": "position",
+  "dimension_rows": [
+    {
+      "position": "P0",
+      "total": 20,
+      "masked": 1,
+      "sdc": 17,
+      "crash": 2,
+      "not_injected": 0,
+      "sdc_rate": 0.85
+    },
+    {
+      "position": "P1",
+      "total": 20,
+      "masked": 1,
+      "sdc": 16,
+      "crash": 3,
+      "not_injected": 0,
+      "sdc_rate": 0.8
+    },
+    {
+      "position": "P2",
+      "total": 20,
+      "masked": 2,
+      "sdc": 15,
+      "crash": 3,
+      "not_injected": 0,
+      "sdc_rate": 0.75
+    },
+    {
+      "position": "P3",
+      "total": 20,
+      "masked": 1,
+      "sdc": 15,
+      "crash": 4,
+      "not_injected": 0,
+      "sdc_rate": 0.75
+    },
+    {
+      "position": "P4",
+      "total": 20,
+      "masked": 1,
+      "sdc": 19,
+      "crash": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.95
+    }
+  ]
+}

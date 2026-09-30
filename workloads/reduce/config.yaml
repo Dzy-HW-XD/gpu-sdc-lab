@@ -1,0 +1,6 @@
+# Reduce workload parameters (block reduction + atomicAdd)
+N: 1048576        # number of input elements
+blocks: 256       # grid size (also the number of partial sums)
+threads: 256      # block size
+dtype: fp32
+seed: 1234
