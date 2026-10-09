@@ -224,6 +224,9 @@ Run them and collect a single master CSV + Wilson-CI cell summary:
 python3 scripts/campaign.py run 015_input_bit_gemm 016_input_instruction_gemm
 python3 scripts/campaign.py collect 015_input_bit_gemm 016_input_instruction_gemm
 python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
+# wide-dynamic-range metrics: log colour scale + numeric values in every cell
+python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit \
+    --metric mean_abs_err --log-color --annotate
 python3 scripts/stats.py --cells results/_campaign/cells.csv uniform bit
 python3 scripts/campaign_report.py results/_campaign/cells.csv \
     results/_campaign/CAMPAIGN_SUMMARY.md --master results/_campaign/master.csv

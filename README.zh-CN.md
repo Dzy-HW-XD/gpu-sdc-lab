@@ -209,6 +209,9 @@ near_one / extreme / small / large` + `real`。带 `input_spec` 的实验会把�
 python3 scripts/campaign.py run 015_input_bit_gemm 016_input_instruction_gemm
 python3 scripts/campaign.py collect 015_input_bit_gemm 016_input_instruction_gemm
 python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
+# 大动态范围指标：对数色标 + 每格标注数值
+python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit \
+    --metric mean_abs_err --log-color --annotate
 python3 scripts/stats.py --cells results/_campaign/cells.csv uniform bit
 ```
 

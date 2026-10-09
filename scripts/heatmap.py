@@ -14,6 +14,7 @@ Usage:
 
 import argparse
 import csv
+import math
 import os
 import sys
 
@@ -51,8 +52,14 @@ def load_cells(path):
     return rows
 
 
-def color(v, vmin, vmax):
-    if vmax <= vmin:
+def color(v, vmin, vmax, log=False):
+    if log:
+        lo_v = max(vmin, 1e-12)
+        hi_v = max(vmax, lo_v * 10.0)
+        vv = max(v, lo_v)
+        t = (math.log10(vv) - math.log10(lo_v)) / (
+            math.log10(hi_v) - math.log10(lo_v))
+    elif vmax <= vmin:
         t = 0.0
     else:
         t = (v - vmin) / (vmax - vmin)
@@ -64,7 +71,21 @@ def color(v, vmin, vmax):
     return "#%02x%02x%02x" % rgb, (t > 0.6)
 
 
-def render(eid, rows, metric, axis_label, outpath, pivot_path):
+def fmt_val(v):
+    if v == 0:
+        return "0"
+    a = abs(v)
+    if a < 0.01 or a >= 1000:
+        return "%.0e" % v
+    if a >= 10:
+        return "%.0f" % v
+    if a >= 1:
+        return "%.2f" % v
+    return "%.3g" % v
+
+
+def render(eid, rows, metric, axis_label, outpath, pivot_path,
+           log_color=False, annotate=False):
     inputs = sorted({r["_input"] for r in rows}, key=_input_rank)
     values = sorted({r["_value"] for r in rows}, key=_value_sort)
     if not inputs or not values:
@@ -81,6 +102,8 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path):
 
     ncols = len(values)
     cw = 34 if ncols > 12 else 84
+    if annotate:
+        cw = max(cw, 52)
     ch = 30
     font_col, font_row = 12, 14
     left = 170
@@ -92,6 +115,11 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path):
     h = top + ch * len(inputs) + bottom
     x0 = left + cw * ncols  # right edge of grid
 
+    mode = metric
+    if log_color:
+        mode += " (log10 colour)"
+    if annotate:
+        mode += " (cell = value)"
     svg = ['<?xml version="1.0" encoding="UTF-8"?>',
            '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" '
            'font-family="DejaVu Sans, Verdana, sans-serif">' % (w, h),
@@ -99,7 +127,7 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path):
            '<text x="%d" y="30" font-size="20" font-weight="bold">%s</text>'
            % (left, eid),
            '<text x="%d" y="50" font-size="14" fill="#555">%s  (%s axis)</text>'
-           % (left, metric, axis_label or "input")]
+           % (left, mode, axis_label or "input")]
     # x axis title (centered over grid)
     svg.append('<text x="%d" y="%d" font-size="13" fill="#333" '
                'text-anchor="middle">%s &#8594;</text>'
@@ -120,15 +148,21 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path):
         for j, v in enumerate(values):
             x = left + j * cw
             val = data.get((inp, v), 0.0)
-            fill, dark = color(val, vmin, vmax)
+            fill, dark = color(val, vmin, vmax, log_color)
             svg.append('<rect x="%d" y="%d" width="%d" height="%d" fill="%s" '
                        'stroke="#ffffff" stroke-width="1"/>' % (x, y, cw, ch, fill))
-            if metric == "sdc_rate" and val > 0:
-                txt = "%.2f" % val if cw >= 60 else "%.1f" % val
-                svg.append('<text x="%d" y="%d" font-size="11" fill="%s" '
+            label = None
+            if metric == "sdc_rate":
+                if val > 0:
+                    label = "%.2f" % val
+            elif annotate:
+                label = fmt_val(val)
+            if label:
+                fsz = 10 if len(label) >= 5 else 11
+                svg.append('<text x="%d" y="%d" font-size="%d" fill="%s" '
                            'text-anchor="middle">%s</text>'
-                           % (x + cw / 2, y + ch / 2 + 4,
-                              "#ffffff" if dark else "#222222", txt))
+                           % (x + cw / 2, y + ch / 2 + 4, fsz,
+                              "#ffffff" if dark else "#222222", label))
     # y axis title (rotated, left)
     svg.append('<text x="%d" y="%d" font-size="13" fill="#333" text-anchor="middle" '
                'transform="rotate(-90 %d %d)">input distribution &#8594;</text>'
@@ -140,8 +174,15 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path):
                % (lx, ly + 20, metric))
     svg.append('<text x="%d" y="%d" font-size="11" text-anchor="end">%.3g</text>'
                % (lx - 6, ly + 11, vmin))
+    lo_v = max(vmin, 1e-12)
+    hi_v = max(vmax, lo_v * 10.0)
     for k in range(60):
-        c, _ = color(vmin + (vmax - vmin) * k / 59.0, vmin, vmax)
+        t = k / 59.0
+        if log_color:
+            val_k = 10 ** (math.log10(lo_v) + t * (math.log10(hi_v) - math.log10(lo_v)))
+        else:
+            val_k = vmin + (vmax - vmin) * t
+        c, _ = color(val_k, vmin, vmax, log_color)
         svg.append('<rect x="%d" y="%d" width="6" height="14" fill="%s"/>'
                    % (lx + k * 6, ly, c))
     svg.append('<text x="%d" y="%d" font-size="11">%.3g</text>'
@@ -167,6 +208,10 @@ def main(argv=None):
                    help="axis row to plot: bit, instruction, size, position, register, input")
     p.add_argument("--experiment", default=None,
                    help="only render this experiment id")
+    p.add_argument("--log-color", action="store_true",
+                   help="colour by log10(value) (for wide-dynamic-range metrics)")
+    p.add_argument("--annotate", action="store_true",
+                   help="print the numeric value in every cell")
     p.add_argument("--outdir", default=None)
     args = p.parse_args(argv)
 
@@ -184,10 +229,16 @@ def main(argv=None):
             continue
         by_eid.setdefault(r["experiment_id"], []).append(r)
     for eid, erows in sorted(by_eid.items()):
-        tag = "%s_%s_%s" % (eid, args.axis, args.metric)
+        suffix = ""
+        if args.log_color:
+            suffix += "_log"
+        if args.annotate:
+            suffix += "_annot"
+        tag = "%s_%s_%s%s" % (eid, args.axis, args.metric, suffix)
         out = os.path.join(outdir, "heatmap_%s.svg" % tag)
         piv = os.path.join(outdir, "pivot_%s.csv" % tag)
-        r = render(eid, erows, args.metric, args.axis, out, piv)
+        r = render(eid, erows, args.metric, args.axis, out, piv,
+                   log_color=args.log_color, annotate=args.annotate)
         if r:
             print("wrote %s" % r)
     return 0
