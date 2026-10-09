@@ -12,6 +12,7 @@ import random
 import sys
 
 from core import util
+from core import regclass as regclass_mod
 from core import experiments as ex
 from core.injection import get_injector
 from core.injection.base import GROUP_IDS, BITFLIP_MODELS, FaultSpec
@@ -56,6 +57,20 @@ class Runner(object):
     def __init__(self, lab):
         self.lab = lab
         self.observers = Observers(lab)
+        self._sass_tables = {}
+
+    def _regclass(self, wl, pc_offset):
+        binpath = getattr(wl, "bin", None)
+        if not binpath or not os.path.exists(binpath):
+            return None
+        table = self._sass_tables.get(binpath)
+        if table is None:
+            try:
+                table = regclass_mod.load_table(binpath, self.lab.cuda_home)
+            except Exception:
+                table = {}
+            self._sass_tables[binpath] = table
+        return regclass_mod.regclass_for(pc_offset, table)
 
     # ---- workload / oracle caches --------------------------------------
     def _workload(self, name, params):
@@ -161,16 +176,26 @@ class Runner(object):
 
         wl_name = expt.get("workload", "gemm")
         cases = ex.build_cases(expt)
-        rng = random.Random(int(expt.get("seed", 1234)))
+        seed0 = int(expt.get("seed", 1234))
         obs_path = os.path.join(out, "observations.jsonl")
-        if os.path.exists(obs_path):
-            os.remove(obs_path)
+        resume = bool(expt.get("resume", True))
+        if resume and os.path.exists(obs_path):
+            records = util.read_jsonl(obs_path)
+        else:
+            records = []
+            if os.path.exists(obs_path):
+                os.remove(obs_path)
+        done = len(records)
         util.write_json(os.path.join(out, "config.yaml"), expt)
 
         wl_cache = {}
-        records = []
         total = len(cases)
+        if done:
+            sys.stdout.write("resuming %s at %d/%d\n" % (eid, done, total))
+            sys.stdout.flush()
         for seq, case in enumerate(cases, start=1):
+            if seq <= done:
+                continue
             case_wl = case.get("workload") or wl_name
             wkey = util.short_hash("%s|%s" % (case_wl, sorted(case["workload_params"].items())))
             if wkey not in wl_cache:
@@ -185,15 +210,18 @@ class Runner(object):
                 raise RuntimeError("target group '%s' has zero instructions in '%s'"
                                    % (case["group"], kern.get("name")))
 
-            spec = make_spec(case, kern, count, rng)
+            spec = make_spec(case, kern, count,
+                             random.Random("%d:%d" % (seed0, seq)))
             rd = util.ensure_dir(os.path.join(raw, "%04d_%s" % (seq, spec.group_name)))
             res = inj.inject(wl, spec, rd, device=0)
 
             runtime_obs = self.observers.runtime.observe(res["run"])
+            out_prefix = res["output"].get("prefix") or res.get("out_prefix")
             comparison = self.observers.output.observe_outputs(
-                gbin, res["output"]["prefix"], wl.output_specs)
+                gbin, out_prefix, wl.output_specs)
             gpu = self.observers.gpu.observe()
             meta = res["fault_meta"]
+            register_class = self._regclass(wl, meta.get("pc_offset"))
             injected = bool(meta["injected"] or meta["kernel_error"] or runtime_obs["crash"])
             classification, reason = classify(runtime_obs, comparison, injected, self.lab.oracle)
             classification_raw = classification
@@ -211,6 +239,7 @@ class Runner(object):
             labels = dict(case["labels"])
             labels.setdefault("group", case["group"])
             labels.setdefault("fault_type", case["fault_type"])
+            labels["register_class"] = register_class or "unclassified"
             labels["position_decile"] = "D%d" % min(9, int(10.0 * spec.inst_id / max(1, count)))
 
             record = {
@@ -239,6 +268,7 @@ class Runner(object):
                     "injected": injected,
                     "static_site": static_site,
                     "register": meta["reg_no"],
+                    "register_class": register_class,
                     "mask": meta["mask"],
                     "before_val": meta["before_val"],
                     "after_val": meta["after_val"],
@@ -325,6 +355,12 @@ class Runner(object):
                 f.write(ex.to_csv(rows, ["category", "total", "masked", "sdc", "crash",
                                          "not_targeted", "not_injected", "sdc_rate"]))
             extra["category_summary"] = rows
+        if any("register_class" in r.get("labels", {}) for r in records):
+            rows = ex.summarize_by(records, "register_class")
+            with open(os.path.join(out, "register_class_summary.csv"), "w", encoding="utf-8") as f:
+                f.write(ex.to_csv(rows, ["register_class", "total", "masked", "sdc",
+                                         "crash", "not_targeted", "not_injected", "sdc_rate"]))
+            extra["register_class_summary"] = rows
 
         util.write_json(os.path.join(out, "experiment.json"),
                         {"config": expt, "counts": counts,

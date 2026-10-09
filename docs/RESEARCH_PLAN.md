@@ -45,7 +45,11 @@ correlated, adversarial`; plus one `real` tensor. Defined in `core/inputgen.py`.
 | E3 | 010/011/012 | input family (softmax/conv/attention) | input | input_sensitivity |
 | E4 | 013_input_sensitivity_mlp | input family, per-layer outputs | input | input_sensitivity |
 | E5 | 014_cross_workload | workload | workload | cross_workload |
-| E6 | bit × dynamic range | sign/exp/mantissa × input | bit, input | (fault_bit + inputs) |
+| E6 | 015_input_bit_gemm | input × bit 0–31 | bit, input | input_grid(bit) |
+| E6 | 016_input_instruction_gemm | input × FFMA/FADD/FMUL | instruction, input | input_grid(instruction) |
+| E6 | 017_input_size_gemm | input × size | size, input | input_grid(size) |
+| E6 | 018_input_position_gemm | input × early/middle/late | position, input | input_grid(position) |
+| E6 | 019_register_class_gemm | input × accumulator/temp | register, input | input_sensitivity (+regclass) |
 | E8 | predictor | input features | — | analysis (scripts/predictor.py) |
 | E9 | input-aware sampling | policy | — | analysis (scripts/sampling.py) |
 
@@ -73,9 +77,14 @@ per-op oracle exactness for deterministic kernels.
 
 ## Roadmap
 
-1. Infrastructure (this commit): workloads, input generators, multi-output
-   oracle, taxonomy, analysis scripts, experiment templates.
-2. Scale E2/E4 on gemm/reduce; produce core input-sensitivity figures with CIs.
-3. Add E3 across the suite; produce instruction-class × input interactions.
-4. E4 multi-layer propagation on `mlp`; E5 cross-workload consistency.
-5. E8 predictor + E9 input-aware sampling; write up; artifact.
+1. Infrastructure: workloads, input generators, multi-output oracle, taxonomy,
+   analysis scripts, experiment templates (done).
+2. Input × variable campaign tooling: `input_grid` kind, FFMA/FADD/FMUL
+   opcode-filtered targets, static register-class labelling
+   (`core/regclass.py`), batch driver (`scripts/campaign.py`) and stdlib
+   heatmaps (`scripts/heatmap.py`); run E6 (015–019) on gemm and produce the
+   core input × bit figures with Wilson CIs.
+3. Scale E2/E4 on gemm/reduce; produce core input-sensitivity figures with CIs.
+4. Add E3 across the suite; produce instruction-class × input interactions.
+5. E4 multi-layer propagation on `mlp`; E5 cross-workload consistency.
+6. E8 predictor + E9 input-aware sampling; write up; artifact.

@@ -1,0 +1,39 @@
+{
+  "id": "016_input_instruction_gemm",
+  "kind": "input_grid",
+  "axis": "instruction",
+  "workload": "gemm",
+  "injector": "nvbitfi",
+  "fault_type": "bitflip",
+  "inputs": [
+    "uniform",
+    "normal",
+    "near_zero",
+    "near_overflow",
+    "extreme",
+    "ones"
+  ],
+  "instructions": [
+    "ffma",
+    "fadd",
+    "fmul"
+  ],
+  "axis_params": {
+    "fadd": {
+      "op_mode": "muladd"
+    },
+    "fmul": {
+      "op_mode": "muladd"
+    }
+  },
+  "injections_per_cell": 100,
+  "input_seed": 1234,
+  "seed": 20261016,
+  "workload_params": {
+    "M": 512,
+    "N": 512,
+    "K": 512,
+    "dtype": "fp32",
+    "pattern": "normal"
+  }
+}

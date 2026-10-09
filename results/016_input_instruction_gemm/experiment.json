@@ -1,0 +1,311 @@
+{
+  "config": {
+    "id": "016_input_instruction_gemm",
+    "kind": "input_grid",
+    "axis": "instruction",
+    "workload": "gemm",
+    "injector": "nvbitfi",
+    "fault_type": "bitflip",
+    "inputs": [
+      "uniform",
+      "normal",
+      "near_zero",
+      "near_overflow",
+      "extreme",
+      "ones"
+    ],
+    "instructions": [
+      "ffma",
+      "fadd",
+      "fmul"
+    ],
+    "axis_params": {
+      "fadd": {
+        "op_mode": "muladd"
+      },
+      "fmul": {
+        "op_mode": "muladd"
+      }
+    },
+    "injections_per_cell": 100,
+    "input_seed": 1234,
+    "seed": 20261016,
+    "workload_params": {
+      "M": 512,
+      "N": 512,
+      "K": 512,
+      "dtype": "fp32",
+      "pattern": "normal"
+    }
+  },
+  "counts": {
+    "MASKED": 88,
+    "SDC": 1065,
+    "CRASH": 0,
+    "NOT_INJECTED": 0,
+    "NOT_TARGETED": 647,
+    "total": 1800,
+    "sdc_rate": 0.9236773633998265
+  },
+  "dimension": "cell",
+  "dimension_rows": [
+    {
+      "cell": "extreme|fadd",
+      "total": 52,
+      "masked": 3,
+      "sdc": 49,
+      "crash": 0,
+      "not_targeted": 48,
+      "not_injected": 0,
+      "sdc_rate": 0.9423076923076923
+    },
+    {
+      "cell": "extreme|ffma",
+      "total": 93,
+      "masked": 2,
+      "sdc": 91,
+      "crash": 0,
+      "not_targeted": 7,
+      "not_injected": 0,
+      "sdc_rate": 0.978494623655914
+    },
+    {
+      "cell": "extreme|fmul",
+      "total": 41,
+      "masked": 5,
+      "sdc": 36,
+      "crash": 0,
+      "not_targeted": 59,
+      "not_injected": 0,
+      "sdc_rate": 0.8780487804878049
+    },
+    {
+      "cell": "near_overflow|fadd",
+      "total": 49,
+      "masked": 3,
+      "sdc": 46,
+      "crash": 0,
+      "not_targeted": 51,
+      "not_injected": 0,
+      "sdc_rate": 0.9387755102040817
+    },
+    {
+      "cell": "near_overflow|ffma",
+      "total": 92,
+      "masked": 2,
+      "sdc": 90,
+      "crash": 0,
+      "not_targeted": 8,
+      "not_injected": 0,
+      "sdc_rate": 0.9782608695652174
+    },
+    {
+      "cell": "near_overflow|fmul",
+      "total": 53,
+      "masked": 7,
+      "sdc": 46,
+      "crash": 0,
+      "not_targeted": 47,
+      "not_injected": 0,
+      "sdc_rate": 0.8679245283018868
+    },
+    {
+      "cell": "near_zero|fadd",
+      "total": 52,
+      "masked": 1,
+      "sdc": 51,
+      "crash": 0,
+      "not_targeted": 48,
+      "not_injected": 0,
+      "sdc_rate": 0.9807692307692307
+    },
+    {
+      "cell": "near_zero|ffma",
+      "total": 91,
+      "masked": 5,
+      "sdc": 86,
+      "crash": 0,
+      "not_targeted": 9,
+      "not_injected": 0,
+      "sdc_rate": 0.945054945054945
+    },
+    {
+      "cell": "near_zero|fmul",
+      "total": 53,
+      "masked": 12,
+      "sdc": 41,
+      "crash": 0,
+      "not_targeted": 47,
+      "not_injected": 0,
+      "sdc_rate": 0.7735849056603774
+    },
+    {
+      "cell": "normal|fadd",
+      "total": 56,
+      "masked": 4,
+      "sdc": 52,
+      "crash": 0,
+      "not_targeted": 44,
+      "not_injected": 0,
+      "sdc_rate": 0.9285714285714286
+    },
+    {
+      "cell": "normal|ffma",
+      "total": 89,
+      "masked": 0,
+      "sdc": 89,
+      "crash": 0,
+      "not_targeted": 11,
+      "not_injected": 0,
+      "sdc_rate": 1.0
+    },
+    {
+      "cell": "normal|fmul",
+      "total": 47,
+      "masked": 9,
+      "sdc": 38,
+      "crash": 0,
+      "not_targeted": 53,
+      "not_injected": 0,
+      "sdc_rate": 0.8085106382978723
+    },
+    {
+      "cell": "ones|fadd",
+      "total": 49,
+      "masked": 5,
+      "sdc": 44,
+      "crash": 0,
+      "not_targeted": 51,
+      "not_injected": 0,
+      "sdc_rate": 0.8979591836734694
+    },
+    {
+      "cell": "ones|ffma",
+      "total": 93,
+      "masked": 4,
+      "sdc": 89,
+      "crash": 0,
+      "not_targeted": 7,
+      "not_injected": 0,
+      "sdc_rate": 0.956989247311828
+    },
+    {
+      "cell": "ones|fmul",
+      "total": 49,
+      "masked": 10,
+      "sdc": 39,
+      "crash": 0,
+      "not_targeted": 51,
+      "not_injected": 0,
+      "sdc_rate": 0.7959183673469388
+    },
+    {
+      "cell": "uniform|fadd",
+      "total": 45,
+      "masked": 3,
+      "sdc": 42,
+      "crash": 0,
+      "not_targeted": 55,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "uniform|ffma",
+      "total": 95,
+      "masked": 3,
+      "sdc": 92,
+      "crash": 0,
+      "not_targeted": 5,
+      "not_injected": 0,
+      "sdc_rate": 0.968421052631579
+    },
+    {
+      "cell": "uniform|fmul",
+      "total": 54,
+      "masked": 10,
+      "sdc": 44,
+      "crash": 0,
+      "not_targeted": 46,
+      "not_injected": 0,
+      "sdc_rate": 0.8148148148148148
+    }
+  ],
+  "rollups": {
+    "target_summary": [
+      {
+        "target": "arithmetic/fadd",
+        "total": 303,
+        "masked": 19,
+        "sdc": 284,
+        "crash": 0,
+        "not_targeted": 297,
+        "not_injected": 0,
+        "sdc_rate": 0.9372937293729373
+      },
+      {
+        "target": "arithmetic/ffma",
+        "total": 553,
+        "masked": 16,
+        "sdc": 537,
+        "crash": 0,
+        "not_targeted": 47,
+        "not_injected": 0,
+        "sdc_rate": 0.9710669077757685
+      },
+      {
+        "target": "arithmetic/fmul",
+        "total": 297,
+        "masked": 53,
+        "sdc": 244,
+        "crash": 0,
+        "not_targeted": 303,
+        "not_injected": 0,
+        "sdc_rate": 0.8215488215488216
+      }
+    ],
+    "category_summary": [
+      {
+        "category": "arithmetic",
+        "total": 1153,
+        "masked": 88,
+        "sdc": 1065,
+        "crash": 0,
+        "not_targeted": 647,
+        "not_injected": 0,
+        "sdc_rate": 0.9236773633998265
+      }
+    ],
+    "register_class_summary": [
+      {
+        "register_class": "accumulator",
+        "total": 884,
+        "masked": 60,
+        "sdc": 824,
+        "crash": 0,
+        "not_targeted": 412,
+        "not_injected": 0,
+        "sdc_rate": 0.9321266968325792
+      },
+      {
+        "register_class": "temporary",
+        "total": 267,
+        "masked": 26,
+        "sdc": 241,
+        "crash": 0,
+        "not_targeted": 183,
+        "not_injected": 0,
+        "sdc_rate": 0.9026217228464419
+      },
+      {
+        "register_class": "unclassified",
+        "total": 2,
+        "masked": 2,
+        "sdc": 0,
+        "crash": 0,
+        "not_targeted": 52,
+        "not_injected": 0,
+        "sdc_rate": 0.0
+      }
+    ]
+  }
+}

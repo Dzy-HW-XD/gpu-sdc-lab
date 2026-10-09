@@ -164,7 +164,8 @@ Targets are chosen from a small instruction tree (`core/taxonomy.py`); each leaf
 maps to a NVBitFI group and optional opcode whitelist:
 
 ```
-arithmetic: fp64, fp32, fp16*, int*, mma*      (* opcode-filtered in "others")
+arithmetic: fp64, fp32, ffma*, fadd*, fmul*, fp16*, int*, mma*
+            (* opcode-filtered: ffma/fadd/fmul filter the fp32 bucket, others filter "others")
 memory:     load, atomic, store(not injectable)
 control:    predicate, nodest(not injectable)
 meta:       gppr, gp, other
@@ -196,11 +197,59 @@ layer. `scripts/smoke_workloads.sh` verifies determinism for all of them.
 
 `core/inputgen.py` produces deterministic float32 tensors for the study:
 `uniform, normal, lognormal, sparse, cancellation, near_overflow, correlated,
-adversarial`, plus `real` (load a tensor from disk). A workload with an
-`input_spec` (see `experiments/008_*`) materialises these into
-`results/_inputs/` and passes them to the kernel (`--input/--inputA/...`).
-`./sdc-lab gen-input` writes one directly; `scripts/features.py` extracts
-interpretable features (dynamic range, cancellation, exponent stats, ...).
+adversarial, ones, near_zero, near_one, extreme, small, large`, plus `real`
+(load a tensor from disk). A workload with an `input_spec` (see
+`experiments/008_*`, `015_*`) materialises these into `results/_inputs/` and
+passes them to the kernel (`--input/--inputA/...`). `./sdc-lab gen-input`
+writes one directly; `scripts/features.py` extracts interpretable features
+(dynamic range, cancellation, exponent stats, ...).
+
+## Input-dependent campaign (015–019)
+
+`kind: input_grid` sweeps an input family against one second variable while
+holding the rest fixed (paired design), producing composite `input|<value>`
+cells:
+
+| experiment | second variable | notes |
+|---|---|---|
+| `015_input_bit_gemm` | FP32 bit 0–31 | core input × bit heatmap |
+| `016_input_instruction_gemm` | FFMA / FADD / FMUL | opcode-filtered; FADD/FMUL use `--op-mode muladd` |
+| `017_input_size_gemm` | 128/512/1024 | |
+| `018_input_position_gemm` | early / middle / late | |
+| `019_register_class_gemm` | accumulator / temporary | static SASS labelling, see `core/regclass.py` |
+
+Run them and collect a single master CSV + Wilson-CI cell summary:
+
+```bash
+python3 scripts/campaign.py run 015_input_bit_gemm 016_input_instruction_gemm
+python3 scripts/campaign.py collect 015_input_bit_gemm 016_input_instruction_gemm
+python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
+python3 scripts/stats.py --cells results/_campaign/cells.csv uniform bit
+python3 scripts/campaign_report.py results/_campaign/cells.csv \
+    results/_campaign/CAMPAIGN_SUMMARY.md --master results/_campaign/master.csv
+```
+
+`campaign.py` merges every `observations.jsonl` into
+`results/_campaign/master.csv` and `results/_campaign/cells.csv` (per-axis
+Wilson CIs). `heatmap.py` renders stdlib-only SVG heatmaps + pivot CSVs.
+
+## Instruction-type targeting
+
+The NVBitFI `fp32` bucket is one group; `core/taxonomy.py` exposes opcode-
+filtered views of it (`arithmetic/ffma`, `arithmetic/fadd`, `arithmetic/fmul`)
+so a hit is only counted when the executed opcode matches. GEMM's inner loop is
+pure FFMA, so `gemm` supports `--op-mode muladd`, which forces separate
+`__fmul_rn`/`__fadd_rn` instructions (still deterministic) to materialise FADD
+and FMUL in the same kernel. Default `--op-mode fma` is byte-identical to the
+original GEMM.
+
+## Register-class labelling
+
+`core/regclass.py` disassembles the workload (`cuobjdump -sass`, cached under
+`results/_sass/`) and labels each FP32 instruction's destination as
+`accumulator` (destination is also an operand, i.e. an in-place running sum) or
+`temporary`. The runner attaches `fault.register_class` to every record and
+writes `register_class_summary.csv`. This is a static, best-effort heuristic.
 
 ## Analysis tools
 

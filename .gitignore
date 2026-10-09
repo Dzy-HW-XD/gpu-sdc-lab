@@ -21,9 +21,19 @@ results/raw/
 results/_golden/
 results/_profile/
 results/_inputs/
+results/_sass/
+results/_bench/
+results/_sanity2/
+results/_campaign_smoke/
+results/_campaign*.log
 *.bin
 
 # OS / editor
 .DS_Store
 Thumbs.db
 *.swp
+
+# Local secrets (never commit)
+新建 文本文档.txt
+*Token*.txt
+*token*.txt

@@ -1,0 +1,34 @@
+{
+  "id": "018_input_position_gemm",
+  "kind": "input_grid",
+  "axis": "position",
+  "workload": "gemm",
+  "injector": "nvbitfi",
+  "groups": [
+    "fp32"
+  ],
+  "fault_type": "bitflip",
+  "inputs": [
+    "uniform",
+    "normal",
+    "sparse",
+    "near_overflow",
+    "extreme",
+    "ones"
+  ],
+  "positions": [
+    "early",
+    "middle",
+    "late"
+  ],
+  "injections_per_cell": 30,
+  "input_seed": 1234,
+  "seed": 20261018,
+  "workload_params": {
+    "M": 512,
+    "N": 512,
+    "K": 512,
+    "dtype": "fp32",
+    "pattern": "normal"
+  }
+}

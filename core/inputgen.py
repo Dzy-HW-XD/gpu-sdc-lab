@@ -13,6 +13,12 @@ Synthetic families target different error-propagation mechanisms:
   near_overflow  - values close to FLT_MAX
   correlated     - low-rank / periodic structure
   adversarial    - engineered extreme exponents + cancellation
+  ones           - all-ones matrix
+  near_zero      - values just above the subnormal range
+  near_one       - values clustered around 1.0
+  extreme        - alternating near-FLT_MAX magnitudes plus small values
+  small          - uniform over a tiny range
+  large          - uniform over a wide range
   real           - load a tensor from a file
 """
 
@@ -125,6 +131,59 @@ def _adversarial(n, seed):
     return out
 
 
+@register("ones")
+def _ones(n, seed, value=1.0):
+    return [_f32(value) for _ in range(n)]
+
+
+@register("near_zero")
+def _near_zero(n, seed, magnitude=1e-30):
+    """Values just above the smallest normal range (exponent-sensitive)."""
+    r = random.Random(seed)
+    out = []
+    for _ in range(n):
+        if r.random() < 0.1:
+            out.append(0.0)
+        else:
+            v = magnitude * (1.0 + r.random())
+            out.append(_f32(v if r.random() < 0.5 else -v))
+    return out
+
+
+@register("near_one")
+def _near_one(n, seed, eps=1e-6):
+    """Values tightly clustered around 1.0 (mantissa-rounding-sensitive)."""
+    r = random.Random(seed)
+    return [_f32(1.0 + eps * r.gauss(0.0, 1.0)) for _ in range(n)]
+
+
+@register("extreme")
+def _extreme(n, seed, frac=0.5, base_sigma=1.0):
+    """Alternating near-FLT_MAX magnitudes mixed with small values: explosive
+    exponent behaviour under a single register-bit flip."""
+    r = random.Random(seed)
+    out = []
+    for _ in range(n):
+        if r.random() < frac:
+            v = FLT_MAX * (0.5 + 0.4 * r.random())
+            out.append(_f32(v if r.random() < 0.5 else -v))
+        else:
+            out.append(_f32(r.gauss(0.0, base_sigma)))
+    return out
+
+
+@register("small")
+def _small(n, seed, mag=1e-3):
+    r = random.Random(seed)
+    return [_f32(r.uniform(-mag, mag)) for _ in range(n)]
+
+
+@register("large")
+def _large(n, seed, mag=1e3):
+    r = random.Random(seed)
+    return [_f32(r.uniform(-mag, mag)) for _ in range(n)]
+
+
 @register("real")
 def _real(n, seed, path=None):
     if not path:
@@ -147,7 +206,8 @@ def _real(n, seed, path=None):
 
 # --------------------------------------------------------------------------
 FAMILIES = ["uniform", "normal", "lognormal", "sparse", "cancellation",
-            "near_overflow", "correlated", "adversarial"]
+            "near_overflow", "correlated", "adversarial",
+            "ones", "near_zero", "near_one", "extreme", "small", "large"]
 
 
 def generate(spec, n):

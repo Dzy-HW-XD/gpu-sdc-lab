@@ -37,15 +37,17 @@ core/
   oracle/      输出比对器 + MASKED/SDC/CRASH 分类器
   observer/    OutputObserver / RuntimeObserver / GPUObserver
   runner/      编排单个实验
-  experiments.py  各实验种类的用例生成与聚合
+  experiments.py  各实验种类的用例生成与聚合（含 input_grid）
   config.py, util.py, yamlmini.py
 workloads/          gemm, reduce, conv2d, softmax, attention, mlp（各含 README）
 fault_models/nvbitfi/  后端说明 + 兼容性补丁
-experiments/     001..014 实验定义
+experiments/     001..019 实验定义
 core/taxonomy.py  指令分类树（故障目标选择）
-core/inputgen.py  输入分布生成器（8 个合成族 + 真实张量）
+core/inputgen.py  输入分布生成器（14 个合成族 + 真实张量）
+core/regclass.py  静态 SASS 寄存器分类（累加器 / 临时）
 scripts/          build.sh, setup_nvbitfi.sh, smoke_workloads.sh,
-                  analyze.py, stats.py, features.py, predictor.py, sampling.py
+                  analyze.py, stats.py, features.py, predictor.py, sampling.py,
+                  campaign.py（批量遍历+汇总）, heatmap.py（纯标准库 SVG 热力图）
 docs/RESEARCH_PLAN.md  论文实验方案
 results/         生成的产物
 scripts/         setup_nvbitfi.sh, build.sh, env.sh
@@ -99,6 +101,16 @@ sdc-lab          CLI 入口
 ./sdc-lab run --experiment 005_gemm_size
 ./sdc-lab run --experiment 006_data_pattern
 ./sdc-lab run --experiment 007_reduce_atomic
+
+# 输入相关性实验（input × bit / 指令 / 规模 / 时机）
+./sdc-lab run --experiment 008_input_sensitivity_gemm
+./sdc-lab run --experiment 015_input_bit_gemm
+./sdc-lab run --experiment 016_input_instruction_gemm
+
+# 批量活动：运行 + 汇总 + 热力图（见下节）
+python3 scripts/campaign.py run 015_input_bit_gemm
+python3 scripts/campaign.py collect 015_input_bit_gemm
+python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
 
 # 临时实验：100 次 bitflip，混合目标
 ./sdc-lab run --workload gemm --injector nvbitfi \
@@ -154,7 +166,8 @@ results/002_fault_position/
 NVBitFI 组，并可选带 opcode 白名单：
 
 ```
-arithmetic: fp64, fp32, fp16*, int*, mma*      (* 在 others 桶里按 opcode 过滤)
+arithmetic: fp64, fp32, ffma*, fadd*, fmul*, fp16*, int*, mma*
+            (* 按 opcode 过滤：ffma/fadd/fmul 过滤 fp32 桶，其余过滤 others 桶)
 memory:     load, atomic, store(不可注)
 control:    predicate, nodest(不可注)
 meta:       gppr, gp, other
@@ -172,13 +185,49 @@ opcode-filtered 的叶子在共享的 `others` 桶里采样，只有命中的 op
 （mlp 为“前向+一步反向”的小型训练步，输出 6 个具名张量，用于研究误差**逐层传播**）。
 
 输入生成器（`core/inputgen.py`）：`uniform / normal / lognormal / sparse /
-cancellation / near_overflow / correlated / adversarial` + `real`。带
-`input_spec` 的实验会把输入物化到 `results/_inputs/` 并传给 kernel。
-`./sdc-lab gen-input` 可直接生成一个输入文件。
+cancellation / near_overflow / correlated / adversarial / ones / near_zero /
+near_one / extreme / small / large` + `real`。带 `input_spec` 的实验会把输入
+物化到 `results/_inputs/` 并传给 kernel。`./sdc-lab gen-input` 可直接生成。
+`scripts/features.py` 提取可解释的输入特征（动态范围、抵消、指数统计等）。
 
-分析工具：`scripts/stats.py`（Wilson CI/McNemar/Holm）、`features.py`（输入特征）、
-`predictor.py`（岭回归 + 留一验证）、`sampling.py`（均匀 vs 输入感知采样）、
-`analyze.py`（汇总）。论文实验方案见 `docs/RESEARCH_PLAN.md`。
+## 输入相关性批量实验（015–019）
+
+`kind: input_grid` 在固定其它变量的前提下，遍历“输入分布 × 单个第二变量”
+（配对设计），cell 命名为 `input|<值>`：
+
+| 实验 | 第二变量 | 说明 |
+|---|---|---|
+| `015_input_bit_gemm` | FP32 bit 0–31 | 核心 input × bit 热力图 |
+| `016_input_instruction_gemm` | FFMA / FADD / FMUL | 按 opcode 过滤；FADD/FMUL 用 `--op-mode muladd` |
+| `017_input_size_gemm` | 128/512/1024 | |
+| `018_input_position_gemm` | early / middle / late | |
+| `019_register_class_gemm` | 累加器 / 临时寄存器 | 静态 SASS 分类，见 `core/regclass.py` |
+
+批量运行 + 汇总 + 绘图：
+
+```bash
+python3 scripts/campaign.py run 015_input_bit_gemm 016_input_instruction_gemm
+python3 scripts/campaign.py collect 015_input_bit_gemm 016_input_instruction_gemm
+python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
+python3 scripts/stats.py --cells results/_campaign/cells.csv uniform bit
+```
+
+`campaign.py` 把每个实验的 `observations.jsonl` 合并为
+`results/_campaign/master.csv` 与 `results/_campaign/cells.csv`（按维度给出
+Wilson 置信区间）；`heatmap.py` 用纯标准库渲染 SVG 热力图并导出透视表 CSV。
+
+## 指令类型 / 寄存器类型
+
+NVBitFI 的 `fp32` 是一个整组；`core/taxonomy.py` 为它增加了按 opcode 过滤的
+视图（`arithmetic/ffma`、`arithmetic/fadd`、`arithmetic/fmul`），只有命中白名单
+opcode 才计入。GEMM 内层循环几乎全是 FFMA，因此 `gemm` 支持 `--op-mode muladd`
+强制使用 `__fmul_rn`/`__fadd_rn`（仍然确定性），在同一 kernel 内造出 FADD/FMUL；
+默认 `--op-mode fma` 与原始 GEMM 逐位一致。
+
+`core/regclass.py` 用 `cuobjdump -sass`（缓存于 `results/_sass/`）把每条 FP32
+指令的目标寄存器标为 `accumulator`（目标同时是操作数，即原地累加）或
+`temporary`；runner 会在每条记录写入 `fault.register_class` 并输出
+`register_class_summary.csv`。这是静态、启发式的分类。
 
 ## SDC 分类
 

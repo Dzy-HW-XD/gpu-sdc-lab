@@ -17,6 +17,9 @@ path like "memory/atomic". A subtree expands to all its leaves.
 from core.injection.base import GROUP_IDS
 
 # opcode whitelists (names match NVBitFI common/arch.h enum)
+_FP32_FFMA = ["FFMA", "FFMA32I"]
+_FP32_FADD = ["FADD", "FADD32I"]
+_FP32_FMUL = ["FMUL", "FMUL32I"]
 _FP16 = ["HADD2", "HADD2_32I", "HFMA2", "HFMA2_32I", "HMUL2", "HMUL2_32I",
          "HSET2", "HSETP2"]
 _MMA = ["HMMA", "IMMA"]
@@ -30,6 +33,10 @@ TAXONOMY = {
     "arithmetic": {
         "fp64": {"group": "fp64"},
         "fp32": {"group": "fp32"},
+        # opcode-filtered views of the shared fp32 bucket (instruction-type study)
+        "ffma": {"group": "fp32", "opcodes": _FP32_FFMA},
+        "fadd": {"group": "fp32", "opcodes": _FP32_FADD},
+        "fmul": {"group": "fp32", "opcodes": _FP32_FMUL},
         "fp16": {"group": "others", "opcodes": _FP16},
         "int": {"group": "others", "opcodes": _INT},
         "mma": {"group": "others", "opcodes": _MMA},

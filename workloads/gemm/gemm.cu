@@ -48,14 +48,26 @@ __host__ __device__ static inline float det_value(u64 idx, u64 seed) {
     return (float)v;
 }
 
+// muladd == 0: default FP32 accumulation (compiles to FFMA) -> fp32 stream is
+//              essentially all FFMA.
+// muladd == 1: forced separate round-to-nearest multiply and add, so the fp32
+//              instruction stream contains FMUL and FADD (for the
+//              instruction-type study). Deterministic either way.
 __global__ void gemm_fp32(const float *A, const float *B, float *C, int M, int N,
-                          int K) {
+                          int K, int muladd) {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     if (row < M && col < N) {
         float acc = 0.0f;
-        for (int k = 0; k < K; ++k) {
-            acc += A[(u64)row * K + k] * B[(u64)k * N + col];
+        if (muladd) {
+            for (int k = 0; k < K; ++k) {
+                acc = __fadd_rn(__fmul_rn(A[(u64)row * K + k],
+                                          B[(u64)k * N + col]), acc);
+            }
+        } else {
+            for (int k = 0; k < K; ++k) {
+                acc += A[(u64)row * K + k] * B[(u64)k * N + col];
+            }
         }
         C[(u64)row * N + col] = acc;
     }
@@ -102,6 +114,8 @@ int main(int argc, char **argv) {
     std::string pattern = arg_value(argc, argv, "--pattern", "normal");
     std::string out = arg_value(argc, argv, "--out", "gemm_out");
     int device = atoi(arg_value(argc, argv, "--device", "0").c_str());
+    std::string op_mode = arg_value(argc, argv, "--op-mode", "fma");
+    int muladd = (op_mode == "muladd") ? 1 : 0;
 
     if (dtype != "fp32") {
         fprintf(stdout, "ERROR: unsupported dtype '%s' (Phase 1 supports fp32 only)\n",
@@ -155,15 +169,22 @@ int main(int argc, char **argv) {
 
     dim3 block(16, 16);
     dim3 grid((N + block.x - 1) / block.x, (M + block.y - 1) / block.y);
-    gemm_fp32<<<grid, block>>>(dA, dB, dC, M, N, K);
+    gemm_fp32<<<grid, block>>>(dA, dB, dC, M, N, K, muladd);
     CUDA_CHECK(cudaGetLastError());
     CUDA_CHECK(cudaDeviceSynchronize());
 
     CUDA_CHECK(cudaMemcpy(hC, dC, c_sz * sizeof(float), cudaMemcpyDeviceToHost));
 
     // Deterministic checksum (sequential host sum) for sanity/logging only.
+    // An injected fault can make the output NaN/Inf; emit valid JSON in that
+    // case (json.parse rejects lowercase `nan`).
     double csum = 0.0;
+    bool csum_finite = true;
     for (size_t i = 0; i < c_sz; ++i) csum += (double)hC[i];
+    if (!(csum == csum) || csum > 1e308 || csum < -1e308) csum_finite = false;
+    char csum_json[64];
+    if (csum_finite) snprintf(csum_json, sizeof(csum_json), "%.10g", csum);
+    else snprintf(csum_json, sizeof(csum_json), "\"nan\"");
 
     std::string binpath = out + ".bin";
     FILE *fp = fopen(binpath.c_str(), "wb");
@@ -179,15 +200,15 @@ int main(int argc, char **argv) {
     if (fp) {
         fprintf(fp,
                 "{\"M\":%d,\"N\":%d,\"K\":%d,\"dtype\":\"%s\",\"seed\":%llu,"
-                "\"pattern\":\"%s\",\"device\":%d,\"device_name\":\"%s\","
-                "\"elements\":%llu,\"checksum\":%.10g}\n",
-                M, N, K, dtype.c_str(), seed, pattern.c_str(), device,
-                prop.name, (unsigned long long)c_sz, csum);
+                "\"pattern\":\"%s\",\"op_mode\":\"%s\",\"device\":%d,\"device_name\":\"%s\","
+                "\"elements\":%llu,\"checksum\":%s}\n",
+                M, N, K, dtype.c_str(), seed, pattern.c_str(), op_mode.c_str(), device,
+                prop.name, (unsigned long long)c_sz, csum_json);
         fclose(fp);
     }
 
-    printf("GEMM_DONE M=%d N=%d K=%d dtype=%s seed=%llu pattern=%s checksum=%.10g\n",
-           M, N, K, dtype.c_str(), seed, pattern.c_str(), csum);
+    printf("GEMM_DONE M=%d N=%d K=%d dtype=%s seed=%llu pattern=%s op_mode=%s checksum=%.10g\n",
+           M, N, K, dtype.c_str(), seed, pattern.c_str(), op_mode.c_str(), csum);
 
     free(hA); free(hB); free(hC);
     cudaFree(dA); cudaFree(dB); cudaFree(dC);

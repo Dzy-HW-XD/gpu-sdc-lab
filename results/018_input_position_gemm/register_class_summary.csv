@@ -1,0 +1,4 @@
+register_class,total,masked,sdc,crash,not_targeted,not_injected,sdc_rate
+accumulator,422,9,413,0,0,0,0.978673
+temporary,82,3,79,0,0,0,0.963415
+unclassified,36,6,10,20,0,0,0.277778

@@ -1,0 +1,286 @@
+{
+  "config": {
+    "id": "018_input_position_gemm",
+    "kind": "input_grid",
+    "axis": "position",
+    "workload": "gemm",
+    "injector": "nvbitfi",
+    "groups": [
+      "fp32"
+    ],
+    "fault_type": "bitflip",
+    "inputs": [
+      "uniform",
+      "normal",
+      "sparse",
+      "near_overflow",
+      "extreme",
+      "ones"
+    ],
+    "positions": [
+      "early",
+      "middle",
+      "late"
+    ],
+    "injections_per_cell": 30,
+    "input_seed": 1234,
+    "seed": 20261018,
+    "workload_params": {
+      "M": 512,
+      "N": 512,
+      "K": 512,
+      "dtype": "fp32",
+      "pattern": "normal"
+    }
+  },
+  "counts": {
+    "MASKED": 18,
+    "SDC": 502,
+    "CRASH": 20,
+    "NOT_INJECTED": 0,
+    "NOT_TARGETED": 0,
+    "total": 540,
+    "sdc_rate": 0.9296296296296296
+  },
+  "dimension": "cell",
+  "dimension_rows": [
+    {
+      "cell": "extreme|early",
+      "total": 30,
+      "masked": 4,
+      "sdc": 26,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8666666666666667
+    },
+    {
+      "cell": "extreme|late",
+      "total": 30,
+      "masked": 1,
+      "sdc": 28,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "extreme|middle",
+      "total": 30,
+      "masked": 0,
+      "sdc": 29,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "near_overflow|early",
+      "total": 30,
+      "masked": 2,
+      "sdc": 26,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8666666666666667
+    },
+    {
+      "cell": "near_overflow|late",
+      "total": 30,
+      "masked": 0,
+      "sdc": 27,
+      "crash": 3,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "cell": "near_overflow|middle",
+      "total": 30,
+      "masked": 0,
+      "sdc": 30,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 1.0
+    },
+    {
+      "cell": "normal|early",
+      "total": 30,
+      "masked": 4,
+      "sdc": 26,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8666666666666667
+    },
+    {
+      "cell": "normal|late",
+      "total": 30,
+      "masked": 0,
+      "sdc": 28,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "normal|middle",
+      "total": 30,
+      "masked": 0,
+      "sdc": 29,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "ones|early",
+      "total": 30,
+      "masked": 1,
+      "sdc": 28,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "ones|late",
+      "total": 30,
+      "masked": 1,
+      "sdc": 27,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "cell": "ones|middle",
+      "total": 30,
+      "masked": 0,
+      "sdc": 30,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 1.0
+    },
+    {
+      "cell": "sparse|early",
+      "total": 30,
+      "masked": 0,
+      "sdc": 28,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "sparse|late",
+      "total": 30,
+      "masked": 0,
+      "sdc": 29,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "sparse|middle",
+      "total": 30,
+      "masked": 0,
+      "sdc": 29,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "uniform|early",
+      "total": 30,
+      "masked": 2,
+      "sdc": 28,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "uniform|late",
+      "total": 30,
+      "masked": 3,
+      "sdc": 27,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "cell": "uniform|middle",
+      "total": 30,
+      "masked": 0,
+      "sdc": 27,
+      "crash": 3,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    }
+  ],
+  "rollups": {
+    "target_summary": [
+      {
+        "target": "arithmetic/fp32",
+        "total": 540,
+        "masked": 18,
+        "sdc": 502,
+        "crash": 20,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9296296296296296
+      }
+    ],
+    "category_summary": [
+      {
+        "category": "arithmetic",
+        "total": 540,
+        "masked": 18,
+        "sdc": 502,
+        "crash": 20,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9296296296296296
+      }
+    ],
+    "register_class_summary": [
+      {
+        "register_class": "accumulator",
+        "total": 422,
+        "masked": 9,
+        "sdc": 413,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9786729857819905
+      },
+      {
+        "register_class": "temporary",
+        "total": 82,
+        "masked": 3,
+        "sdc": 79,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9634146341463414
+      },
+      {
+        "register_class": "unclassified",
+        "total": 36,
+        "masked": 6,
+        "sdc": 10,
+        "crash": 20,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.2777777777777778
+      }
+    ]
+  }
+}

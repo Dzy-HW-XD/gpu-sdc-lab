@@ -59,7 +59,10 @@ class Workload(object):
         meta = {}
         mpath = out_prefix + ".json"
         if os.path.exists(mpath):
-            meta = util.read_json(mpath)
+            try:
+                meta = util.read_json(mpath)
+            except (ValueError, OSError):
+                meta = {}
         return {"prefix": out_prefix, "outputs": outputs, "meta": meta}
 
     def cleanup(self):

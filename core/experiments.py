@@ -28,8 +28,29 @@ KIND_DIMENSION = {
     "gemm_size": "size",
     "data_pattern": "pattern",
     "input_sensitivity": "input",
+    "input_grid": "cell",
     "cross_workload": "workload",
 }
+
+POSITION_RANGES = {
+    "early": (0.0, 0.33),
+    "middle": (0.33, 0.66),
+    "late": (0.66, 1.0),
+}
+DEFAULT_SIZES = [[128, 128, 128], [512, 512, 512], [1024, 1024, 1024]]
+
+
+def _axis_values(axis, expt):
+    """Default value list for one input_grid axis."""
+    if axis == "bit":
+        return list(expt.get("bits", range(32)))
+    if axis == "instruction":
+        return list(expt.get("instructions", ["ffma", "fadd", "fmul"]))
+    if axis == "size":
+        return [list(s) for s in expt.get("sizes", DEFAULT_SIZES)]
+    if axis == "position":
+        return list(expt.get("positions", ["early", "middle", "late"]))
+    raise ValueError("unknown input_grid axis '%s'" % axis)
 
 
 def make_input_spec(workload, family, seed, real_path=None):
@@ -91,8 +112,8 @@ def build_cases(expt):
 
     pick_leaf = _leaf_picker(expt)
 
-    def add(labels, wp, ft, bit, rng_range):
-        leaf = pick_leaf()
+    def add(labels, wp, ft, bit, rng_range, leaf=None):
+        leaf = leaf if leaf is not None else pick_leaf()
         labels = dict(labels)
         labels.setdefault("group", leaf["group"])
         labels.setdefault("target", leaf["path"])
@@ -175,6 +196,47 @@ def build_cases(expt):
             wp["input_spec"] = make_input_spec(wl, fam, seed0, expt.get("real_path"))
             for _ in range(per):
                 add({"input": fam, "workload": wl}, wp, ftype, None, (0.0, 1.0))
+
+    elif kind == "input_grid":
+        wl = expt.get("workload", "gemm")
+        axis = expt.get("axis", "bit")
+        fams = expt.get("inputs", inputgen.FAMILIES)
+        per = int(expt.get("injections_per_cell",
+                           expt.get("injections_per_input", 30)))
+        seed0 = int(expt.get("input_seed", 1234))
+        base = base_params(expt)
+        values = _axis_values(axis, expt)
+        for fam in fams:
+            base_wp = dict(base)
+            base_wp["input_spec"] = make_input_spec(wl, fam, seed0, expt.get("real_path"))
+            for val in values:
+                wp = dict(base_wp)
+                labels = {"input": fam, "axis": axis, "workload": wl}
+                leaf = None
+                rng_range = (0.0, 1.0)
+                bit = None
+                if axis == "bit":
+                    bit = int(val)
+                    labels["bit"] = bit
+                elif axis == "instruction":
+                    labels["instruction"] = str(val)
+                    leaves = [lf for lf in taxonomy.resolve(val) if lf["injectable"]]
+                    if not leaves:
+                        raise ValueError("instruction '%s' is not injectable" % val)
+                    leaf = leaves[0]
+                elif axis == "size":
+                    M, N, K = (int(x) for x in val)
+                    wp.update({"M": M, "N": N, "K": K})
+                    labels["size"] = "%dx%dx%d" % (M, N, K)
+                elif axis == "position":
+                    labels["position"] = str(val)
+                    rng_range = POSITION_RANGES.get(str(val), (0.0, 1.0))
+                labels["cell"] = "%s|%s" % (fam, val)
+                axis_params = (expt.get("axis_params") or {}).get(str(val))
+                if axis_params:
+                    wp.update(axis_params)
+                for _ in range(per):
+                    add(labels, wp, ftype, bit, rng_range, leaf=leaf)
 
     elif kind == "cross_workload":
         wls = expt.get("workloads",

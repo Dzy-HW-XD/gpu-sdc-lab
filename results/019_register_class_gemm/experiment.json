@@ -1,0 +1,172 @@
+{
+  "config": {
+    "id": "019_register_class_gemm",
+    "kind": "input_sensitivity",
+    "workload": "gemm",
+    "injector": "nvbitfi",
+    "groups": [
+      "fp32"
+    ],
+    "fault_type": "bitflip",
+    "inputs": [
+      "uniform",
+      "normal",
+      "sparse",
+      "near_zero",
+      "near_overflow",
+      "extreme",
+      "ones"
+    ],
+    "injections_per_input": 60,
+    "input_seed": 1234,
+    "dimension": "input",
+    "seed": 20261019,
+    "workload_params": {
+      "M": 512,
+      "N": 512,
+      "K": 512,
+      "dtype": "fp32",
+      "pattern": "normal"
+    }
+  },
+  "counts": {
+    "MASKED": 18,
+    "SDC": 389,
+    "CRASH": 13,
+    "NOT_INJECTED": 0,
+    "NOT_TARGETED": 0,
+    "total": 420,
+    "sdc_rate": 0.9261904761904762
+  },
+  "dimension": "input",
+  "dimension_rows": [
+    {
+      "input": "extreme",
+      "total": 60,
+      "masked": 4,
+      "sdc": 54,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "input": "near_overflow",
+      "total": 60,
+      "masked": 3,
+      "sdc": 56,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "input": "near_zero",
+      "total": 60,
+      "masked": 1,
+      "sdc": 56,
+      "crash": 3,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "input": "normal",
+      "total": 60,
+      "masked": 4,
+      "sdc": 51,
+      "crash": 5,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.85
+    },
+    {
+      "input": "ones",
+      "total": 60,
+      "masked": 1,
+      "sdc": 59,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9833333333333333
+    },
+    {
+      "input": "sparse",
+      "total": 60,
+      "masked": 2,
+      "sdc": 56,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "input": "uniform",
+      "total": 60,
+      "masked": 3,
+      "sdc": 57,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.95
+    }
+  ],
+  "rollups": {
+    "target_summary": [
+      {
+        "target": "arithmetic/fp32",
+        "total": 420,
+        "masked": 18,
+        "sdc": 389,
+        "crash": 13,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9261904761904762
+      }
+    ],
+    "category_summary": [
+      {
+        "category": "arithmetic",
+        "total": 420,
+        "masked": 18,
+        "sdc": 389,
+        "crash": 13,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9261904761904762
+      }
+    ],
+    "register_class_summary": [
+      {
+        "register_class": "accumulator",
+        "total": 317,
+        "masked": 10,
+        "sdc": 307,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9684542586750788
+      },
+      {
+        "register_class": "temporary",
+        "total": 74,
+        "masked": 2,
+        "sdc": 72,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.972972972972973
+      },
+      {
+        "register_class": "unclassified",
+        "total": 29,
+        "masked": 6,
+        "sdc": 10,
+        "crash": 13,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.3448275862068966
+      }
+    ]
+  }
+}

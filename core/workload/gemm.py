@@ -61,7 +61,7 @@ class GEMMWorkload(Workload):
 
     def command(self, out_prefix, device=0):
         p = self.params
-        return [
+        cmd = [
             self.bin,
             "--M", str(p["M"]),
             "--N", str(p["N"]),
@@ -71,13 +71,23 @@ class GEMMWorkload(Workload):
             "--pattern", str(p["pattern"]),
             "--device", str(device),
             "--out", out_prefix,
-        ] + self._input_args()
+        ]
+        op_mode = str(p.get("op_mode", "fma"))
+        if op_mode and op_mode != "fma":
+            cmd += ["--op-mode", op_mode]
+        return cmd + self._input_args()
 
     def collect_output(self, out_prefix):
         binpath = out_prefix + ".bin"
         metapath = out_prefix + ".json"
-        meta = util.read_json(metapath) if os.path.exists(metapath) else {}
-        return {"bin": binpath, "meta": meta, "exists": os.path.exists(binpath)}
+        meta = {}
+        if os.path.exists(metapath):
+            try:
+                meta = util.read_json(metapath)
+            except (ValueError, OSError):
+                meta = {}
+        return {"prefix": out_prefix, "bin": binpath, "meta": meta,
+                "exists": os.path.exists(binpath)}
 
     @property
     def output_bin(self):

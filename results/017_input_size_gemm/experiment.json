@@ -1,0 +1,295 @@
+{
+  "config": {
+    "id": "017_input_size_gemm",
+    "kind": "input_grid",
+    "axis": "size",
+    "workload": "gemm",
+    "injector": "nvbitfi",
+    "groups": [
+      "fp32"
+    ],
+    "fault_type": "bitflip",
+    "inputs": [
+      "uniform",
+      "normal",
+      "sparse",
+      "near_overflow",
+      "extreme",
+      "ones"
+    ],
+    "sizes": [
+      [
+        128,
+        128,
+        128
+      ],
+      [
+        512,
+        512,
+        512
+      ],
+      [
+        1024,
+        1024,
+        1024
+      ]
+    ],
+    "injections_per_cell": 30,
+    "input_seed": 1234,
+    "seed": 20261017,
+    "workload_params": {
+      "dtype": "fp32",
+      "pattern": "normal"
+    }
+  },
+  "counts": {
+    "MASKED": 24,
+    "SDC": 491,
+    "CRASH": 25,
+    "NOT_INJECTED": 0,
+    "NOT_TARGETED": 0,
+    "total": 540,
+    "sdc_rate": 0.9092592592592592
+  },
+  "dimension": "cell",
+  "dimension_rows": [
+    {
+      "cell": "extreme|[1024, 1024, 1024]",
+      "total": 30,
+      "masked": 0,
+      "sdc": 26,
+      "crash": 4,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8666666666666667
+    },
+    {
+      "cell": "extreme|[128, 128, 128]",
+      "total": 30,
+      "masked": 3,
+      "sdc": 27,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "cell": "extreme|[512, 512, 512]",
+      "total": 30,
+      "masked": 1,
+      "sdc": 29,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "near_overflow|[1024, 1024, 1024]",
+      "total": 30,
+      "masked": 0,
+      "sdc": 27,
+      "crash": 3,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "cell": "near_overflow|[128, 128, 128]",
+      "total": 30,
+      "masked": 4,
+      "sdc": 24,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8
+    },
+    {
+      "cell": "near_overflow|[512, 512, 512]",
+      "total": 30,
+      "masked": 3,
+      "sdc": 25,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8333333333333334
+    },
+    {
+      "cell": "normal|[1024, 1024, 1024]",
+      "total": 30,
+      "masked": 1,
+      "sdc": 28,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "normal|[128, 128, 128]",
+      "total": 30,
+      "masked": 0,
+      "sdc": 29,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "normal|[512, 512, 512]",
+      "total": 30,
+      "masked": 3,
+      "sdc": 26,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8666666666666667
+    },
+    {
+      "cell": "ones|[1024, 1024, 1024]",
+      "total": 30,
+      "masked": 0,
+      "sdc": 30,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 1.0
+    },
+    {
+      "cell": "ones|[128, 128, 128]",
+      "total": 30,
+      "masked": 2,
+      "sdc": 26,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8666666666666667
+    },
+    {
+      "cell": "ones|[512, 512, 512]",
+      "total": 30,
+      "masked": 2,
+      "sdc": 25,
+      "crash": 3,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.8333333333333334
+    },
+    {
+      "cell": "sparse|[1024, 1024, 1024]",
+      "total": 30,
+      "masked": 1,
+      "sdc": 27,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9
+    },
+    {
+      "cell": "sparse|[128, 128, 128]",
+      "total": 30,
+      "masked": 0,
+      "sdc": 28,
+      "crash": 2,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "sparse|[512, 512, 512]",
+      "total": 30,
+      "masked": 1,
+      "sdc": 29,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "uniform|[1024, 1024, 1024]",
+      "total": 30,
+      "masked": 0,
+      "sdc": 29,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9666666666666667
+    },
+    {
+      "cell": "uniform|[128, 128, 128]",
+      "total": 30,
+      "masked": 2,
+      "sdc": 28,
+      "crash": 0,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    },
+    {
+      "cell": "uniform|[512, 512, 512]",
+      "total": 30,
+      "masked": 1,
+      "sdc": 28,
+      "crash": 1,
+      "not_targeted": 0,
+      "not_injected": 0,
+      "sdc_rate": 0.9333333333333333
+    }
+  ],
+  "rollups": {
+    "target_summary": [
+      {
+        "target": "arithmetic/fp32",
+        "total": 540,
+        "masked": 24,
+        "sdc": 491,
+        "crash": 25,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9092592592592592
+      }
+    ],
+    "category_summary": [
+      {
+        "category": "arithmetic",
+        "total": 540,
+        "masked": 24,
+        "sdc": 491,
+        "crash": 25,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9092592592592592
+      }
+    ],
+    "register_class_summary": [
+      {
+        "register_class": "accumulator",
+        "total": 406,
+        "masked": 9,
+        "sdc": 397,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9778325123152709
+      },
+      {
+        "register_class": "temporary",
+        "total": 85,
+        "masked": 3,
+        "sdc": 82,
+        "crash": 0,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.9647058823529412
+      },
+      {
+        "register_class": "unclassified",
+        "total": 49,
+        "masked": 12,
+        "sdc": 12,
+        "crash": 25,
+        "not_targeted": 0,
+        "not_injected": 0,
+        "sdc_rate": 0.24489795918367346
+      }
+    ]
+  }
+}
