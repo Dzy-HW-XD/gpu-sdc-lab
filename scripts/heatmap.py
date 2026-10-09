@@ -64,18 +64,14 @@ def color(v, vmin, vmax):
     return "#%02x%02x%02x" % rgb, (t > 0.6)
 
 
-def render(eid, rows, metric, axis, outpath, pivot_path):
+def render(eid, rows, metric, axis_label, outpath, pivot_path):
     inputs = sorted({r["_input"] for r in rows}, key=_input_rank)
     values = sorted({r["_value"] for r in rows}, key=_value_sort)
-    if axis:
-        values = [v for v in values if str(v).startswith(axis) or axis == "register"]
     if not inputs or not values:
         return None
 
     data = {}
     for r in rows:
-        if r["_value"] not in values:
-            continue
         try:
             data[(r["_input"], r["_value"])] = float(r.get(metric) or 0.0)
         except ValueError:
@@ -83,45 +79,73 @@ def render(eid, rows, metric, axis, outpath, pivot_path):
     allv = list(data.values())
     vmin, vmax = (min(allv), max(allv)) if allv else (0.0, 1.0)
 
-    cw, ch = 30, 24
-    left, top, right, bottom = 150, 70, 40, 60
-    w = left + cw * len(values) + right
+    ncols = len(values)
+    cw = 34 if ncols > 12 else 84
+    ch = 30
+    font_col, font_row = 12, 14
+    left = 170
+    # top margin must fit the longest rotated column label
+    maxlabel = max(len(str(v)) for v in values)
+    top = 60 + int(maxlabel * font_col * 0.62) + 18
+    right, bottom = 50, 90
+    w = left + cw * ncols + right
     h = top + ch * len(inputs) + bottom
+    x0 = left + cw * ncols  # right edge of grid
+
     svg = ['<?xml version="1.0" encoding="UTF-8"?>',
-           '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d">' % (w, h),
-           '<rect width="100%%" height="100%%" fill="white"/>',
-           '<text x="%d" y="30" font-family="sans-serif" font-size="18" '
-           'font-weight="bold">%s - %s</text>' % (left, eid, metric)]
+           '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" '
+           'font-family="DejaVu Sans, Verdana, sans-serif">' % (w, h),
+           '<rect width="100%" height="100%" fill="#ffffff"/>',
+           '<text x="%d" y="30" font-size="20" font-weight="bold">%s</text>'
+           % (left, eid),
+           '<text x="%d" y="50" font-size="14" fill="#555">%s  (%s axis)</text>'
+           % (left, metric, axis_label or "input")]
+    # x axis title (centered over grid)
+    svg.append('<text x="%d" y="%d" font-size="13" fill="#333" '
+               'text-anchor="middle">%s &#8594;</text>'
+               % ((left + x0) / 2, top - maxlabel * font_col * 0.62 - 10,
+                  (axis_label or "value")))
+    # column labels: rotate -90 with text-anchor=start -> read upward, above grid
     for j, v in enumerate(values):
-        x = left + j * cw + cw / 2
-        svg.append('<text x="%d" y="%d" font-family="sans-serif" font-size="10" '
-                   'text-anchor="end" transform="rotate(-90 %d %d)">%s</text>'
-                   % (x, top - 8, x, top - 8, v))
+        x = left + j * cw + cw / 2 + 4
+        y = top - 8
+        svg.append('<text x="%d" y="%d" font-size="%d" text-anchor="start" '
+                   'transform="rotate(-90 %d %d)">%s</text>'
+                   % (x, y, font_col, x, y, v))
+    # rows + cells
     for i, inp in enumerate(inputs):
         y = top + i * ch
-        svg.append('<text x="%d" y="%d" font-family="sans-serif" font-size="12" '
-                   'text-anchor="end">%s</text>' % (left - 6, y + ch * 0.7, inp))
+        svg.append('<text x="%d" y="%d" font-size="%d" text-anchor="end">%s</text>'
+                   % (left - 8, y + ch / 2 + font_row * 0.35, font_row, inp))
         for j, v in enumerate(values):
             x = left + j * cw
             val = data.get((inp, v), 0.0)
             fill, dark = color(val, vmin, vmax)
             svg.append('<rect x="%d" y="%d" width="%d" height="%d" fill="%s" '
-                       'stroke="#dddddd"/>' % (x, y, cw, ch, fill))
+                       'stroke="#ffffff" stroke-width="1"/>' % (x, y, cw, ch, fill))
             if metric == "sdc_rate" and val > 0:
-                svg.append('<text x="%d" y="%d" font-family="sans-serif" '
-                           'font-size="9" fill="%s" text-anchor="middle">%.2f</text>'
-                           % (x + cw / 2, y + ch * 0.7,
-                              "#ffffff" if dark else "#333333", val))
+                txt = "%.2f" % val if cw >= 60 else "%.1f" % val
+                svg.append('<text x="%d" y="%d" font-size="11" fill="%s" '
+                           'text-anchor="middle">%s</text>'
+                           % (x + cw / 2, y + ch / 2 + 4,
+                              "#ffffff" if dark else "#222222", txt))
+    # y axis title (rotated, left)
+    svg.append('<text x="%d" y="%d" font-size="13" fill="#333" text-anchor="middle" '
+               'transform="rotate(-90 %d %d)">input distribution &#8594;</text>'
+               % (24, top + ch * len(inputs) / 2, 24, top + ch * len(inputs) / 2))
     # legend
-    lx, ly = left, top + ch * len(inputs) + 30
-    svg.append('<text x="%d" y="%d" font-family="sans-serif" font-size="10">%.3g</text>'
-               % (lx, ly - 4, vmin))
-    for k in range(50):
-        c, _ = color(vmin + (vmax - vmin) * k / 49.0, vmin, vmax)
-        svg.append('<rect x="%d" y="%d" width="4" height="10" fill="%s"/>' % (lx, ly, c))
-        lx += 4
-    svg.append('<text x="%d" y="%d" font-family="sans-serif" font-size="10">%.3g</text>'
-               % (lx + 4, ly - 4, vmax))
+    ly = top + ch * len(inputs) + 40
+    lx = left
+    svg.append('<text x="%d" y="%d" font-size="12" fill="#333">%s</text>'
+               % (lx, ly + 20, metric))
+    svg.append('<text x="%d" y="%d" font-size="11" text-anchor="end">%.3g</text>'
+               % (lx - 6, ly + 11, vmin))
+    for k in range(60):
+        c, _ = color(vmin + (vmax - vmin) * k / 59.0, vmin, vmax)
+        svg.append('<rect x="%d" y="%d" width="6" height="14" fill="%s"/>'
+                   % (lx + k * 6, ly, c))
+    svg.append('<text x="%d" y="%d" font-size="11">%.3g</text>'
+               % (lx + 60 * 6 + 6, ly + 11, vmax))
     svg.append('</svg>')
     with open(outpath, "w", encoding="utf-8") as f:
         f.write("\n".join(svg))
@@ -163,7 +187,7 @@ def main(argv=None):
         tag = "%s_%s_%s" % (eid, args.axis, args.metric)
         out = os.path.join(outdir, "heatmap_%s.svg" % tag)
         piv = os.path.join(outdir, "pivot_%s.csv" % tag)
-        r = render(eid, erows, args.metric, None, out, piv)
+        r = render(eid, erows, args.metric, args.axis, out, piv)
         if r:
             print("wrote %s" % r)
     return 0
