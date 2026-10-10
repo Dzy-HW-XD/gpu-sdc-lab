@@ -1,5 +1,5 @@
 {
-  "id": "017_input_size_gemm",
+  "id": "017_input_size_gemm__s0of4",
   "kind": "input_grid",
   "axis": "size",
   "workload": "gemm",
@@ -39,5 +39,7 @@
   "workload_params": {
     "dtype": "fp32",
     "pattern": "normal"
-  }
+  },
+  "shard": 0,
+  "nshards": 4
 }

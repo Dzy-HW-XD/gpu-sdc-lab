@@ -1,5 +1,5 @@
 {
-  "id": "018_input_position_gemm",
+  "id": "018_input_position_gemm__s0of12",
   "kind": "input_grid",
   "axis": "position",
   "workload": "gemm",
@@ -30,5 +30,7 @@
     "K": 512,
     "dtype": "fp32",
     "pattern": "normal"
-  }
+  },
+  "shard": 0,
+  "nshards": 12
 }

@@ -1,5 +1,5 @@
 {
-  "id": "016_input_instruction_gemm",
+  "id": "016_input_instruction_gemm__s0of12",
   "kind": "input_grid",
   "axis": "instruction",
   "workload": "gemm",
@@ -35,5 +35,7 @@
     "K": 512,
     "dtype": "fp32",
     "pattern": "normal"
-  }
+  },
+  "shard": 0,
+  "nshards": 12
 }

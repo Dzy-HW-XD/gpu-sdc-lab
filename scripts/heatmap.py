@@ -93,11 +93,20 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path,
 
     data = {}
     for r in rows:
+        na = False
+        if metric != "sdc_rate" and r.get("finite") not in (None, ""):
+            try:
+                na = int(r["finite"]) == 0
+            except ValueError:
+                na = False
+        if na:
+            data[(r["_input"], r["_value"])] = None
+            continue
         try:
             data[(r["_input"], r["_value"])] = float(r.get(metric) or 0.0)
         except ValueError:
             data[(r["_input"], r["_value"])] = 0.0
-    allv = list(data.values())
+    allv = [x for x in data.values() if x is not None]
     vmin, vmax = (min(allv), max(allv)) if allv else (0.0, 1.0)
 
     ncols = len(values)
@@ -148,6 +157,14 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path,
         for j, v in enumerate(values):
             x = left + j * cw
             val = data.get((inp, v), 0.0)
+            if val is None:
+                svg.append('<rect x="%d" y="%d" width="%d" height="%d" fill="#d9d9d9" '
+                           'stroke="#ffffff" stroke-width="1"/>' % (x, y, cw, ch))
+                if annotate:
+                    svg.append('<text x="%d" y="%d" font-size="10" fill="#666" '
+                               'text-anchor="middle">n/a</text>'
+                               % (x + cw / 2, y + ch / 2 + 4))
+                continue
             fill, dark = color(val, vmin, vmax, log_color)
             svg.append('<rect x="%d" y="%d" width="%d" height="%d" fill="%s" '
                        'stroke="#ffffff" stroke-width="1"/>' % (x, y, cw, ch, fill))
@@ -195,7 +212,11 @@ def render(eid, rows, metric, axis_label, outpath, pivot_path,
         wtr = csv.writer(f)
         wtr.writerow(["input"] + values)
         for inp in inputs:
-            wtr.writerow([inp] + ["%.6f" % data.get((inp, v), 0.0) for v in values])
+            row = []
+            for v in values:
+                val = data.get((inp, v))
+                row.append("" if val is None else "%.6f" % val)
+            wtr.writerow([inp] + row)
     return outpath
 
 

@@ -33,7 +33,9 @@ import stats                                  # noqa: E402
 MASTER_COLUMNS = [
     "experiment_id", "input", "bit", "opcode", "target", "register_class",
     "size", "position", "classification", "valid", "max_abs_error",
-    "relative_l2_error", "corrupted_elements", "injected", "target_matched",
+    "relative_l2_error", "corrupted_elements", "finite_pairs", "nan_count",
+    "inf_count", "golden_inf_count", "golden_nan_count", "injected",
+    "target_matched",
 ]
 
 
@@ -44,16 +46,20 @@ def load_experiment(lab, eid):
     return data
 
 
-def run(lab, eids):
+def run(lab, eids, shard=0, nshards=1, tag=None):
     runner = Runner(lab)
     for eid in eids:
         expt = load_experiment(lab, eid)
+        rid = eid if not tag else "%s__%s" % (eid, tag)
+        expt["id"] = rid
+        expt["shard"] = shard
+        expt["nshards"] = nshards
         if expt.get("kind") == "baseline":
-            print("== baseline %s ==" % eid)
+            print("== baseline %s ==" % rid)
             runner.run_baseline(expt)
             continue
-        print("== run %s (kind=%s, axis=%s) ==" %
-              (eid, expt.get("kind"), expt.get("axis")))
+        print("== run %s (kind=%s, axis=%s, shard=%d/%d) ==" %
+              (rid, expt.get("kind"), expt.get("axis"), shard, nshards))
         result = runner.run_fault(expt)
         c = result["counts"]
         print("[%s] total=%d masked=%d sdc=%d crash=%d rate=%.4f" %
@@ -88,25 +94,45 @@ def _row(eid, rec):
         "max_abs_error": obs.get("max_abs_error", ""),
         "relative_l2_error": obs.get("relative_l2_error", ""),
         "corrupted_elements": obs.get("corrupted_elements", ""),
+        "finite_pairs": obs.get("finite_pairs", ""),
+        "nan_count": obs.get("nan_count", ""),
+        "inf_count": obs.get("inf_count", ""),
+        "golden_inf_count": obs.get("golden_inf_count", ""),
+        "golden_nan_count": obs.get("golden_nan_count", ""),
         "injected": fault.get("injected", ""),
         "target_matched": fault.get("target_matched", ""),
     }
+
+
+def _int(v, default=0):
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return default
 
 
 def collect(lab, eids, master_path):
     campaign_dir = os.path.dirname(master_path)
     os.makedirs(campaign_dir, exist_ok=True)
     rows = []
+    rbase = lab.results_dir
+    all_dirs = sorted(d for d in os.listdir(rbase)
+                      if os.path.isdir(os.path.join(rbase, d)))
     for eid in eids:
-        p = os.path.join(lab.results_dir, eid, "observations.jsonl")
-        if not os.path.exists(p):
+        # base dir plus any shard dirs "<eid>__<tag>"
+        groups = [d for d in all_dirs if d == eid or d.startswith(eid + "__")]
+        if not groups:
             print("  [skip] no observations for %s" % eid)
             continue
-        with open(p, encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    rows.append(_row(eid, json.loads(line)))
+        for d in groups:
+            p = os.path.join(rbase, d, "observations.jsonl")
+            if not os.path.exists(p):
+                continue
+            with open(p, encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        rows.append(_row(eid, json.loads(line)))
 
     with open(master_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=MASTER_COLUMNS)
@@ -147,18 +173,26 @@ def _summarize_cells(campaign_dir, rows):
         for axis, cell in _cell_keys(r):
             key = (r["experiment_id"], axis, cell)
             b = agg.setdefault(key, {"masked": 0, "sdc": 0, "crash": 0,
-                                     "abs_err_sum": 0.0, "abs_err_max": 0.0})
+                                     "abs_err_sum": 0.0, "abs_err_max": 0.0,
+                                     "finite": 0, "nonfinite": 0})
             cls = r["classification"]
             if cls == "MASKED":
                 b["masked"] += 1
             elif cls == "SDC":
                 b["sdc"] += 1
-                try:
-                    e = float(r["max_abs_error"])
-                    b["abs_err_sum"] += e
-                    b["abs_err_max"] = max(b["abs_err_max"], e)
-                except (TypeError, ValueError):
-                    pass
+                nonfinite = (_int(r.get("nan_count")) + _int(r.get("inf_count"))
+                             + _int(r.get("golden_inf_count"))
+                             + _int(r.get("golden_nan_count"))) > 0
+                if nonfinite:
+                    b["nonfinite"] += 1
+                if _int(r.get("finite_pairs")) > 0:
+                    try:
+                        e = float(r["max_abs_error"])
+                        b["abs_err_sum"] += e
+                        b["abs_err_max"] = max(b["abs_err_max"], e)
+                        b["finite"] += 1
+                    except (TypeError, ValueError):
+                        pass
             elif cls == "CRASH":
                 b["crash"] += 1
 
@@ -167,16 +201,17 @@ def _summarize_cells(campaign_dir, rows):
         w = csv.writer(f)
         w.writerow(["experiment_id", "axis", "cell", "total", "masked", "sdc",
                     "crash", "sdc_rate", "ci_low", "ci_high", "mean_abs_err",
-                    "max_abs_err"])
+                    "max_abs_err", "finite", "nonfinite"])
         for (eid, axis, cell) in sorted(agg, key=lambda k: (k[0], k[1], str(k[2]))):
             b = agg[(eid, axis, cell)]
             n = b["masked"] + b["sdc"] + b["crash"]
             rate = (b["sdc"] / n) if n else 0.0
             lo, hi = stats.wilson_ci(b["sdc"], n)
-            mean_err = (b["abs_err_sum"] / b["sdc"]) if b["sdc"] else 0.0
+            mean_err = (b["abs_err_sum"] / b["finite"]) if b["finite"] else 0.0
             w.writerow([eid, axis, cell, n, b["masked"], b["sdc"], b["crash"],
                         "%.6f" % rate, "%.6f" % lo, "%.6f" % hi,
-                        "%.6g" % mean_err, "%.6g" % b["abs_err_max"]])
+                        "%.6g" % mean_err, "%.6g" % b["abs_err_max"],
+                        b["finite"], b["nonfinite"]])
     print("wrote %s (%d cells)" % (out, len(agg)))
 
 
@@ -190,6 +225,10 @@ def main(argv=None):
     for cmd in ("run", "collect", "all"):
         sp = sub.add_parser(cmd)
         sp.add_argument("--master", default=None, help="master CSV path")
+        sp.add_argument("--shard", type=int, default=0)
+        sp.add_argument("--nshards", type=int, default=1)
+        sp.add_argument("--tag", default=None,
+                        help="suffix for the result dir (e.g. s0of8)")
         sp.add_argument("experiments", nargs="*")
     args = p.parse_args(argv)
 
@@ -198,7 +237,7 @@ def main(argv=None):
     eids = args.experiments
 
     if args.cmd in ("run", "all") and eids:
-        run(lab, eids)
+        run(lab, eids, shard=args.shard, nshards=args.nshards, tag=args.tag)
     if args.cmd in ("collect", "all"):
         if not eids:
             eids = sorted(d for d in os.listdir(

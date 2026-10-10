@@ -1,5 +1,5 @@
 {
-  "id": "015_input_bit_gemm",
+  "id": "015_input_bit_gemm__s0of12",
   "kind": "input_grid",
   "axis": "bit",
   "workload": "gemm",
@@ -61,5 +61,7 @@
     "K": 512,
     "dtype": "fp32",
     "pattern": "normal"
-  }
+  },
+  "shard": 0,
+  "nshards": 12
 }

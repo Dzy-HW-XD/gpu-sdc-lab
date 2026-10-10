@@ -35,6 +35,7 @@ class GEMMWorkload(Workload):
             os.path.getmtime(self.src) > os.path.getmtime(self.bin)
         ):
             self.build()
+        super(GEMMWorkload, self).prepare()
         return self.bin
 
     def build(self):

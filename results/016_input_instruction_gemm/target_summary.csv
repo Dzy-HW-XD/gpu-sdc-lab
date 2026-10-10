@@ -1,4 +1,0 @@
-target,total,masked,sdc,crash,not_targeted,not_injected,sdc_rate
-arithmetic/fadd,303,19,284,0,297,0,0.937294
-arithmetic/ffma,553,16,537,0,47,0,0.971067
-arithmetic/fmul,297,53,244,0,303,0,0.821549

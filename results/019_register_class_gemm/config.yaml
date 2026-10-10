@@ -1,5 +1,5 @@
 {
-  "id": "019_register_class_gemm",
+  "id": "019_register_class_gemm__s0of12",
   "kind": "input_sensitivity",
   "workload": "gemm",
   "injector": "nvbitfi",
@@ -26,5 +26,7 @@
     "K": 512,
     "dtype": "fp32",
     "pattern": "normal"
-  }
+  },
+  "shard": 0,
+  "nshards": 12
 }

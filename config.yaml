@@ -14,6 +14,8 @@ oracle:
   rel_tol: 0.0
   nan_inf_dominant_ratio: 0.5
 runtime:
-  default_timeout: 60
+  # NVBitFI instrumentation makes large kernels slow; 1024^3 GEMM can exceed
+  # 60s under a shared GPU. 600s avoids mis-classifying slow runs as CRASH.
+  default_timeout: 600
   profile_timeout: 1800
   nvbit_arch: sm_80

@@ -35,10 +35,28 @@ class Workload(object):
         self.input_paths = self._materialize_inputs()
         return None
 
+    def _ensure_inputs(self):
+        """Materialize declared inputs if a workload's own prepare() forgot to.
+
+        Subclasses override prepare() (usually only to build the binary); this
+        is called on every run() so an input_spec can never be silently ignored.
+        """
+        spec = self.params.get("input_spec") or {}
+        if spec and not self.input_paths:
+            self.input_paths = self._materialize_inputs()
+        if spec:
+            missing = [n for n in spec if n not in self.input_paths]
+            if missing:
+                raise RuntimeError(
+                    "workload %s: input_spec declares %s but materialized none "
+                    "of them (input_flags=%s, input_size missing?)"
+                    % (self.name, missing, sorted(self.input_flags)))
+
     def command(self, out_prefix, device=0):
         raise NotImplementedError
 
     def run(self, out_prefix, device=0, cwd=None, extra_env=None, timeout=None):
+        self._ensure_inputs()
         cmd = self.command(out_prefix, device=device)
         if timeout is None:
             timeout = self.lab.runtime.get("default_timeout", 300)

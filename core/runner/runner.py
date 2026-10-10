@@ -6,6 +6,7 @@ from the taxonomy tree; opcode-filtered leaves are only counted when the hit
 opcode matches, otherwise the run is marked NOT_TARGETED.
 """
 
+import contextlib
 import datetime
 import os
 import random
@@ -24,6 +25,27 @@ from core.workload import get_workload
 
 def _now():
     return datetime.datetime.now().isoformat(timespec="seconds")
+
+
+@contextlib.contextmanager
+def _file_lock(lockpath):
+    """Advisory exclusive lock (no-op on platforms without fcntl, e.g. Windows).
+
+    Used so concurrent injection shards can safely share the golden / profile
+    cache without racing on creation.
+    """
+    try:
+        import fcntl
+    except ImportError:
+        yield
+        return
+    f = open(lockpath, "w")
+    try:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        yield
+    finally:
+        fcntl.flock(f, fcntl.LOCK_UN)
+        f.close()
 
 
 def make_spec(case, kern, count, rng):
@@ -83,26 +105,28 @@ class Runner(object):
         cdir = util.ensure_dir(os.path.join(self.lab.results_dir, "_golden", sig))
         gprefix = os.path.join(cdir, "golden")
         first = gprefix + wl.output_specs[0]["suffix"]
-        if not os.path.exists(first):
-            run = wl.run(gprefix, device=0, cwd=cdir)
-            if run["exit_code"] != 0 or not os.path.exists(first):
-                raise RuntimeError("golden generation failed: %s\n%s"
-                                   % (run.get("stdout"), run.get("stderr")))
-            meta = wl.collect_output(gprefix).get("meta")
-            util.write_json(os.path.join(cdir, "golden.meta.json"),
-                            {"workload": wl.name, "params": wl.params,
-                             "meta": meta, "runtime_sec": run["runtime_sec"]})
+        with _file_lock(os.path.join(cdir, "golden.lock")):
+            if not os.path.exists(first):
+                run = wl.run(gprefix, device=0, cwd=cdir)
+                if run["exit_code"] != 0 or not os.path.exists(first):
+                    raise RuntimeError("golden generation failed: %s\n%s"
+                                       % (run.get("stdout"), run.get("stderr")))
+                meta = wl.collect_output(gprefix).get("meta")
+                util.write_json(os.path.join(cdir, "golden.meta.json"),
+                                {"workload": wl.name, "params": wl.params,
+                                 "meta": meta, "runtime_sec": run["runtime_sec"]})
         return gprefix
 
     def _profile_for(self, wl):
         sig = util.short_hash(wl.signature())
         cdir = util.ensure_dir(os.path.join(self.lab.results_dir, "_profile", sig))
         jpath = os.path.join(cdir, "profile.json")
-        if os.path.exists(jpath):
-            return util.read_json(jpath)
-        inj = get_injector("nvbitfi", self.lab)
-        prof = inj.profile(wl, cdir)
-        util.write_json(jpath, prof)
+        with _file_lock(os.path.join(cdir, "profile.lock")):
+            if os.path.exists(jpath):
+                return util.read_json(jpath)
+            inj = get_injector("nvbitfi", self.lab)
+            prof = inj.profile(wl, cdir)
+            util.write_json(jpath, prof)
         return prof
 
     @staticmethod
@@ -176,6 +200,10 @@ class Runner(object):
 
         wl_name = expt.get("workload", "gemm")
         cases = ex.build_cases(expt)
+        shard = int(expt.get("shard", 0))
+        nshards = max(1, int(expt.get("nshards", 1)))
+        if nshards > 1:
+            cases = [c for i, c in enumerate(cases) if i % nshards == shard]
         seed0 = int(expt.get("seed", 1234))
         obs_path = os.path.join(out, "observations.jsonl")
         resume = bool(expt.get("resume", True))
@@ -248,6 +276,8 @@ class Runner(object):
                 "timestamp": _now(),
                 "workload": wl.name,
                 "params": wl.params,
+                "raw_out_bin": (out_prefix + wl.output_specs[0]["suffix"]) if out_prefix else None,
+                "golden_bin": gbin + wl.output_specs[0]["suffix"],
                 "fault": {
                     "type": spec.fault_type,
                     "model_id": spec.bit_flip_model,

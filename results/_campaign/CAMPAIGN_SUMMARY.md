@@ -6,61 +6,61 @@ All results from `results/_campaign/cells.csv` (Wilson CIs included). Fault mode
 
 | experiment | sdc | n | rate |
 |---|---|---|---|
-| 015_input_bit_gemm | 7026 | 7680 | 0.915 |
-| 016_input_instruction_gemm | 1065 | 1153 | 0.924 |
-| 017_input_size_gemm | 491 | 540 | 0.909 |
-| 018_input_position_gemm | 502 | 540 | 0.930 |
-| 019_register_class_gemm | 389 | 420 | 0.926 |
+| 015_input_bit_gemm | 6479 | 7680 | 0.844 |
+| 016_input_instruction_gemm | 865 | 1151 | 0.752 |
+| 017_input_size_gemm | 455 | 540 | 0.843 |
+| 018_input_position_gemm | 451 | 540 | 0.835 |
+| 019_register_class_gemm | 354 | 420 | 0.843 |
 
 ## SDC rate by FP32 bit region (015)
 
 | region | sdc | n | rate |
 |---|---|---|---|
-| exponent | 1780 | 1920 | 0.927 |
-| mantissa | 5020 | 5520 | 0.909 |
-| sign | 226 | 240 | 0.942 |
+| exponent | 1485 | 1920 | 0.773 |
+| mantissa | 4817 | 5520 | 0.873 |
+| sign | 177 | 240 | 0.738 |
 
 ## SDC rate by input (015, pooled over bits 0-31)
 
 | input | sdc | n | rate |
 |---|---|---|---|
-| correlated | 876 | 960 | 0.912 |
-| extreme | 879 | 960 | 0.916 |
-| near_overflow | 870 | 960 | 0.906 |
-| near_zero | 885 | 960 | 0.922 |
-| normal | 881 | 960 | 0.918 |
-| ones | 883 | 960 | 0.920 |
-| sparse | 883 | 960 | 0.920 |
-| uniform | 869 | 960 | 0.905 |
+| correlated | 906 | 960 | 0.944 |
+| extreme | 751 | 960 | 0.782 |
+| near_overflow | 598 | 960 | 0.623 |
+| near_zero | 857 | 960 | 0.893 |
+| normal | 855 | 960 | 0.891 |
+| ones | 860 | 960 | 0.896 |
+| sparse | 766 | 960 | 0.798 |
+| uniform | 886 | 960 | 0.923 |
 
 ## SDC rate by instruction (016)
 
 | opcode | sdc | n | rate |
 |---|---|---|---|
-| FADD | 284 | 303 | 0.937 |
-| FFMA | 537 | 553 | 0.971 |
-| FMUL | 244 | 297 | 0.822 |
+| FADD | 216 | 315 | 0.686 |
+| FFMA | 486 | 552 | 0.880 |
+| FMUL | 163 | 284 | 0.574 |
 
 ## SDC rate by register class (019)
 
 | register_class | sdc | n | rate |
 |---|---|---|---|
-| accumulator | 307 | 317 | 0.968 |
-| temporary | 72 | 74 | 0.973 |
+| accumulator | 284 | 336 | 0.845 |
+| temporary | 62 | 69 | 0.899 |
 
 ## SDC rate by GEMM size (017)
 
 | size | sdc | n | rate |
 |---|---|---|---|
-| 1024x1024x1024 | 167 | 180 | 0.928 |
-| 128x128x128 | 162 | 180 | 0.900 |
-| 512x512x512 | 162 | 180 | 0.900 |
+| 1024x1024x1024 | 158 | 180 | 0.878 |
+| 128x128x128 | 149 | 180 | 0.828 |
+| 512x512x512 | 148 | 180 | 0.822 |
 
 ## SDC rate by injection position (018)
 
 | position | sdc | n | rate |
 |---|---|---|---|
-| early | 162 | 180 | 0.900 |
-| late | 166 | 180 | 0.922 |
-| middle | 174 | 180 | 0.967 |
+| early | 148 | 180 | 0.822 |
+| late | 150 | 180 | 0.833 |
+| middle | 153 | 180 | 0.850 |
 
