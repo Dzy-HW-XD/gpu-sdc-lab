@@ -202,7 +202,9 @@ adversarial, ones, near_zero, near_one, extreme, small, large`, plus `real`
 `experiments/008_*`, `015_*`) materialises these into `results/_inputs/` and
 passes them to the kernel (`--input/--inputA/...`). `./sdc-lab gen-input`
 writes one directly; `scripts/features.py` extracts interpretable features
-(dynamic range, cancellation, exponent stats, ...).
+(dynamic range, cancellation, exponent stats, ...). See
+[docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md) for what each family means,
+with concrete example values.
 
 ## Input-dependent campaign (015–019)
 

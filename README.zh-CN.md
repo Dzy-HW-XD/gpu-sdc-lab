@@ -189,6 +189,7 @@ cancellation / near_overflow / correlated / adversarial / ones / near_zero /
 near_one / extreme / small / large` + `real`。带 `input_spec` 的实验会把输入
 物化到 `results/_inputs/` 并传给 kernel。`./sdc-lab gen-input` 可直接生成。
 `scripts/features.py` 提取可解释的输入特征（动态范围、抵消、指数统计等）。
+每种输入分布的含义与示例见 [docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md)。
 
 ## 输入相关性批量实验（015–019）
 
