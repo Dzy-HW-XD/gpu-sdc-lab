@@ -44,25 +44,41 @@ def read_floats(path):
     return a
 
 
+def _same_value(a, b):
+    if a == b:
+        return True
+    if a != a and b != b:  # both NaN
+        return True
+    return False
+
+
 def corrupted_at_levels(golden, fault, levels):
     """Return a list of booleans: True if the run is corrupted (SDC) at that
-    level, i.e. some element exceeds abs_tol + rel_tol*|golden|.
+    level, i.e. some element differs from golden beyond abs_tol + rel_tol*|g|.
 
-    We only need the MASKED-vs-SDC decision, so the scan stops as soon as
-    every level has already been seen to exceed (early exit). Non-finite
-    elements (fault or golden NaN/Inf) corrupt at every level.
+    A run whose output is bitwise identical to golden is MASKED at every level
+    (this matches the run-time oracle's sha256 fast path, and is essential for
+    overflow-prone inputs where golden is legitimately Inf/NaN: an unchanged
+    Inf output is NOT corruption). Non-finite elements that are *equal* to the
+    golden value (same Inf, or both NaN) are not corruption; a non-finite value
+    that differs corrupts at every level (it can never be within tolerance).
+
+    We only need the MASKED-vs-SDC decision, so the scan stops as soon as every
+    level has already been seen to exceed (early exit).
     """
     n = len(levels)
     if len(fault) != len(golden):
         return [True] * n
+    if golden.tobytes() == fault.tobytes():
+        return [False] * n
     done = [False] * n
-    n_elems = len(golden)
-    for i in range(n_elems):
+    for i in range(len(golden)):
         gv = golden[i]
         fv = fault[i]
-        if fv != fv or fv == math.inf or fv == -math.inf:
-            return [True] * n
-        if gv != gv or gv == math.inf or gv == -math.inf:
+        if (fv != fv or fv == math.inf or fv == -math.inf
+                or gv != gv or gv == math.inf or gv == -math.inf):
+            if _same_value(gv, fv):
+                continue
             return [True] * n
         d = fv - gv
         ad = d if d >= 0.0 else -d

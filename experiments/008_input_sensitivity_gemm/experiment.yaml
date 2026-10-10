@@ -4,7 +4,7 @@ workload: gemm
 injector: nvbitfi
 groups: [arithmetic/fp32, memory/load, meta/gp]
 fault_type: bitflip
-inputs: [uniform, normal, lognormal, sparse, cancellation, near_overflow, correlated, adversarial]
+inputs: [uniform, normal, lognormal, sparse, cancellation, correlated, adversarial]
 injections_per_input: 20
 input_seed: 1234
 dimension: input

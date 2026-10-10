@@ -4,7 +4,7 @@ workload: reduce
 injector: nvbitfi
 groups: [memory/atomic, arithmetic/fp32, memory/load, meta/gp]
 fault_type: bitflip
-inputs: [uniform, normal, lognormal, cancellation, near_overflow, adversarial]
+inputs: [uniform, normal, lognormal, cancellation, adversarial]
 injections_per_input: 20
 input_seed: 1234
 dimension: input

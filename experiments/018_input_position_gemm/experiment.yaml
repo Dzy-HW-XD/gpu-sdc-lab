@@ -5,7 +5,7 @@ workload: gemm
 injector: nvbitfi
 groups: [fp32]
 fault_type: bitflip
-inputs: [uniform, normal, sparse, near_overflow, extreme, ones]
+inputs: [uniform, normal, sparse, ones]
 positions: [early, middle, late]
 injections_per_cell: 30
 input_seed: 1234

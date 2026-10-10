@@ -152,20 +152,24 @@ def compare(golden_bin, fault_bin, abs_tol=0.0, rel_tol=0.0):
         gv = golden[i]
         fv = fault[i]
         f_finite = (fv == fv) and not (fv == math.inf or fv == -math.inf)
+        g_finite = (gv == gv) and not (gv == math.inf or gv == -math.inf)
         if not f_finite:
             if fv != fv:
                 nan_count += 1
             else:
                 inf_count += 1
-            corrupted += 1
-            continue
-        g_finite = (gv == gv) and not (gv == math.inf or gv == -math.inf)
         if not g_finite:
             if gv != gv:
                 golden_nan += 1
             else:
                 golden_inf += 1
-            corrupted += 1
+        if not f_finite or not g_finite:
+            # Non-finite: only a *difference* from golden is corruption (an
+            # unchanged Inf/NaN output is not). Such values are never within
+            # any tolerance.
+            same = (fv == gv) or (fv != fv and gv != gv)
+            if not same:
+                corrupted += 1
             continue
         finite_n += 1
         d = fv - gv

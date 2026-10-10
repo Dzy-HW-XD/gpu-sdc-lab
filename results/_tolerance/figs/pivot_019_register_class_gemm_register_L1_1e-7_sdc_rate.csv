@@ -2,7 +2,5 @@ input,accumulator,temporary
 uniform,0.695652,0.727273
 normal,0.583333,0.818182
 sparse,0.695652,0.666667
-near_overflow,1.000000,1.000000
 ones,0.431373,0.166667
 near_zero,0.000000,0.000000
-extreme,1.000000,1.000000

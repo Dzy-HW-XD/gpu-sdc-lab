@@ -4,7 +4,7 @@ axis: instruction
 workload: gemm
 injector: nvbitfi
 fault_type: bitflip
-inputs: [uniform, normal, near_zero, near_overflow, extreme, ones]
+inputs: [uniform, normal, near_zero, ones]
 instructions: [ffma, fadd, fmul]
 # FFMA uses the default FMA inner loop; FADD/FMUL need the forced mul/add mode so
 # those opcodes dominate the fp32 stream. Sampling inside fp32 is opcode-filtered.

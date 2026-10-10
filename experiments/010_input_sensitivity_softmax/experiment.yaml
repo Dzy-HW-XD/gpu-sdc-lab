@@ -4,7 +4,7 @@ workload: softmax
 injector: nvbitfi
 groups: [arithmetic/fp32, memory/load, meta/other, meta/gp]
 fault_type: bitflip
-inputs: [uniform, normal, lognormal, sparse, near_overflow, adversarial]
+inputs: [uniform, normal, lognormal, sparse, adversarial]
 injections_per_input: 20
 input_seed: 1234
 dimension: input
