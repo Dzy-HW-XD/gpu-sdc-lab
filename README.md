@@ -234,6 +234,21 @@ python3 scripts/campaign_report.py results/_campaign/cells.csv \
     results/_campaign/CAMPAIGN_SUMMARY.md --master results/_campaign/master.csv
 ```
 
+Tolerance sensitivity is computed **offline** from the preserved raw outputs
+(no GPU re-run): `scripts/tolerance_sweep.py` re-classifies the same samples at
+levels L1..L5 = `(1e-7,1e-6) .. (1e-3,1e-2)` (synchronous ×10 scaling), and
+`scripts/tolerance_heatmaps.py` draws one input × bit heatmap per level. See
+`results/_tolerance/TOLERANCE_LEVELS.md`.
+
+```bash
+python3 scripts/tolerance_sweep.py 015_input_bit_gemm 016_input_instruction_gemm \
+    017_input_size_gemm 018_input_position_gemm 019_register_class_gemm \
+    --out results/_tolerance
+python3 scripts/tolerance_heatmaps.py \
+    --cells results/_tolerance/tolerance_by_cell.csv \
+    --experiment 015_input_bit_gemm --outdir results/_tolerance/figs
+```
+
 `campaign.py` merges every `observations.jsonl` into
 `results/_campaign/master.csv` and `results/_campaign/cells.csv` (per-axis
 Wilson CIs). `heatmap.py` renders stdlib-only SVG heatmaps + pivot CSVs.

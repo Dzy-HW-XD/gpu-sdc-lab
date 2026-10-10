@@ -220,6 +220,20 @@ python3 scripts/stats.py --cells results/_campaign/cells.csv uniform bit
 `results/_campaign/master.csv` 与 `results/_campaign/cells.csv`（按维度给出
 Wilson 置信区间）；`heatmap.py` 用纯标准库渲染 SVG 热力图并导出透视表 CSV。
 
+**容忍度敏感性（离线、与注入解耦）**：`scripts/tolerance_sweep.py` 对同一批
+样本按 L1..L5 = `(1e-7,1e-6) .. (1e-3,1e-2)`（同步 ×10）重算分类，
+`scripts/tolerance_heatmaps.py` 为每档输出一张 input × bit 热力图；说明见
+`results/_tolerance/TOLERANCE_LEVELS.md`。
+
+```bash
+python3 scripts/tolerance_sweep.py 015_input_bit_gemm 016_input_instruction_gemm \
+    017_input_size_gemm 018_input_position_gemm 019_register_class_gemm \
+    --out results/_tolerance
+python3 scripts/tolerance_heatmaps.py \
+    --cells results/_tolerance/tolerance_by_cell.csv \
+    --experiment 015_input_bit_gemm --outdir results/_tolerance/figs
+```
+
 ## 指令类型 / 寄存器类型
 
 NVBitFI 的 `fp32` 是一个整组；`core/taxonomy.py` 为它增加了按 opcode 过滤的
