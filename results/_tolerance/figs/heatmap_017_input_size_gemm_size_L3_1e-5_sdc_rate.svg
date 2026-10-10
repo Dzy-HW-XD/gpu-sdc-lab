@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="472" height="452" font-family="DejaVu Sans, Verdana, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="170" y="30" font-size="20" font-weight="bold">017_input_size_gemm  [L3_1e-5]</text>
+<text x="170" y="50" font-size="14" fill="#555">sdc_rate  (size axis)</text>
+<text x="296" y="67" font-size="13" fill="#333" text-anchor="middle">size &#8594;</text>
+<text x="216" y="174" font-size="12" text-anchor="start" transform="rotate(-90 216 174)">1024x1024x1024</text>
+<text x="300" y="174" font-size="12" text-anchor="start" transform="rotate(-90 300 174)">128x128x128</text>
+<text x="384" y="174" font-size="12" text-anchor="start" transform="rotate(-90 384 174)">512x512x512</text>
+<text x="162" y="201" font-size="14" text-anchor="end">uniform</text>
+<rect x="170" y="182" width="84" height="30" fill="#c96672" stroke="#ffffff" stroke-width="1"/>
+<text x="212" y="201" font-size="11" fill="#ffffff" text-anchor="middle">0.70</text>
+<rect x="254" y="182" width="84" height="30" fill="#d89aa2" stroke="#ffffff" stroke-width="1"/>
+<text x="296" y="201" font-size="11" fill="#222222" text-anchor="middle">0.50</text>
+<rect x="338" y="182" width="84" height="30" fill="#d38992" stroke="#ffffff" stroke-width="1"/>
+<text x="380" y="201" font-size="11" fill="#222222" text-anchor="middle">0.57</text>
+<text x="162" y="231" font-size="14" text-anchor="end">normal</text>
+<rect x="170" y="212" width="84" height="30" fill="#c65d6a" stroke="#ffffff" stroke-width="1"/>
+<text x="212" y="231" font-size="11" fill="#ffffff" text-anchor="middle">0.73</text>
+<rect x="254" y="212" width="84" height="30" fill="#cb6f7a" stroke="#ffffff" stroke-width="1"/>
+<text x="296" y="231" font-size="11" fill="#ffffff" text-anchor="middle">0.67</text>
+<rect x="338" y="212" width="84" height="30" fill="#c35562" stroke="#ffffff" stroke-width="1"/>
+<text x="380" y="231" font-size="11" fill="#ffffff" text-anchor="middle">0.77</text>
+<text x="162" y="261" font-size="14" text-anchor="end">sparse</text>
+<rect x="170" y="242" width="84" height="30" fill="#ddacb2" stroke="#ffffff" stroke-width="1"/>
+<text x="212" y="261" font-size="11" fill="#222222" text-anchor="middle">0.43</text>
+<rect x="254" y="242" width="84" height="30" fill="#f2f2f2" stroke="#ffffff" stroke-width="1"/>
+<text x="296" y="261" font-size="11" fill="#222222" text-anchor="middle">0.17</text>
+<rect x="338" y="242" width="84" height="30" fill="#d89aa2" stroke="#ffffff" stroke-width="1"/>
+<text x="380" y="261" font-size="11" fill="#222222" text-anchor="middle">0.50</text>
+<text x="162" y="291" font-size="14" text-anchor="end">near_overflow</text>
+<rect x="170" y="272" width="84" height="30" fill="#b2182b" stroke="#ffffff" stroke-width="1"/>
+<text x="212" y="291" font-size="11" fill="#ffffff" text-anchor="middle">1.00</text>
+<rect x="254" y="272" width="84" height="30" fill="#b7293a" stroke="#ffffff" stroke-width="1"/>
+<text x="296" y="291" font-size="11" fill="#ffffff" text-anchor="middle">0.93</text>
+<rect x="338" y="272" width="84" height="30" fill="#bc3a4a" stroke="#ffffff" stroke-width="1"/>
+<text x="380" y="291" font-size="11" fill="#ffffff" text-anchor="middle">0.87</text>
+<text x="162" y="321" font-size="14" text-anchor="end">ones</text>
+<rect x="170" y="302" width="84" height="30" fill="#ddacb2" stroke="#ffffff" stroke-width="1"/>
+<text x="212" y="321" font-size="11" fill="#222222" text-anchor="middle">0.43</text>
+<rect x="254" y="302" width="84" height="30" fill="#e2bdc2" stroke="#ffffff" stroke-width="1"/>
+<text x="296" y="321" font-size="11" fill="#222222" text-anchor="middle">0.37</text>
+<rect x="338" y="302" width="84" height="30" fill="#c35562" stroke="#ffffff" stroke-width="1"/>
+<text x="380" y="321" font-size="11" fill="#ffffff" text-anchor="middle">0.77</text>
+<text x="162" y="351" font-size="14" text-anchor="end">extreme</text>
+<rect x="170" y="332" width="84" height="30" fill="#b7293a" stroke="#ffffff" stroke-width="1"/>
+<text x="212" y="351" font-size="11" fill="#ffffff" text-anchor="middle">0.93</text>
+<rect x="254" y="332" width="84" height="30" fill="#b2182b" stroke="#ffffff" stroke-width="1"/>
+<text x="296" y="351" font-size="11" fill="#ffffff" text-anchor="middle">1.00</text>
+<rect x="338" y="332" width="84" height="30" fill="#b2182b" stroke="#ffffff" stroke-width="1"/>
+<text x="380" y="351" font-size="11" fill="#ffffff" text-anchor="middle">1.00</text>
+<text x="24" y="272" font-size="13" fill="#333" text-anchor="middle" transform="rotate(-90 24 272)">input distribution &#8594;</text>
+<text x="170" y="422" font-size="12" fill="#333">sdc_rate</text>
+<text x="164" y="413" font-size="11" text-anchor="end">0.167</text>
+<rect x="170" y="402" width="6" height="14" fill="#f2f2f2"/>
+<rect x="176" y="402" width="6" height="14" fill="#f0eeee"/>
+<rect x="182" y="402" width="6" height="14" fill="#efeaeb"/>
+<rect x="188" y="402" width="6" height="14" fill="#eee6e7"/>
+<rect x="194" y="402" width="6" height="14" fill="#ede3e4"/>
+<rect x="200" y="402" width="6" height="14" fill="#ecdfe1"/>
+<rect x="206" y="402" width="6" height="14" fill="#ebdbdd"/>
+<rect x="212" y="402" width="6" height="14" fill="#ead8da"/>
+<rect x="218" y="402" width="6" height="14" fill="#e9d4d7"/>
+<rect x="224" y="402" width="6" height="14" fill="#e8d0d3"/>
+<rect x="230" y="402" width="6" height="14" fill="#e7cdd0"/>
+<rect x="236" y="402" width="6" height="14" fill="#e6c9cc"/>
+<rect x="242" y="402" width="6" height="14" fill="#e4c5c9"/>
+<rect x="248" y="402" width="6" height="14" fill="#e3c1c6"/>
+<rect x="254" y="402" width="6" height="14" fill="#e2bec2"/>
+<rect x="260" y="402" width="6" height="14" fill="#e1babf"/>
+<rect x="266" y="402" width="6" height="14" fill="#e0b6bc"/>
+<rect x="272" y="402" width="6" height="14" fill="#dfb3b8"/>
+<rect x="278" y="402" width="6" height="14" fill="#deafb5"/>
+<rect x="284" y="402" width="6" height="14" fill="#ddabb1"/>
+<rect x="290" y="402" width="6" height="14" fill="#dca8ae"/>
+<rect x="296" y="402" width="6" height="14" fill="#dba4ab"/>
+<rect x="302" y="402" width="6" height="14" fill="#daa0a7"/>
+<rect x="308" y="402" width="6" height="14" fill="#d99da4"/>
+<rect x="314" y="402" width="6" height="14" fill="#d799a1"/>
+<rect x="320" y="402" width="6" height="14" fill="#d6959d"/>
+<rect x="326" y="402" width="6" height="14" fill="#d5919a"/>
+<rect x="332" y="402" width="6" height="14" fill="#d48e96"/>
+<rect x="338" y="402" width="6" height="14" fill="#d38a93"/>
+<rect x="344" y="402" width="6" height="14" fill="#d28690"/>
+<rect x="350" y="402" width="6" height="14" fill="#d1838c"/>
+<rect x="356" y="402" width="6" height="14" fill="#d07f89"/>
+<rect x="362" y="402" width="6" height="14" fill="#cf7b86"/>
+<rect x="368" y="402" width="6" height="14" fill="#ce7882"/>
+<rect x="374" y="402" width="6" height="14" fill="#cd747f"/>
+<rect x="380" y="402" width="6" height="14" fill="#cc707b"/>
+<rect x="386" y="402" width="6" height="14" fill="#ca6c78"/>
+<rect x="392" y="402" width="6" height="14" fill="#c96975"/>
+<rect x="398" y="402" width="6" height="14" fill="#c86571"/>
+<rect x="404" y="402" width="6" height="14" fill="#c7616e"/>
+<rect x="410" y="402" width="6" height="14" fill="#c65e6b"/>
+<rect x="416" y="402" width="6" height="14" fill="#c55a67"/>
+<rect x="422" y="402" width="6" height="14" fill="#c45664"/>
+<rect x="428" y="402" width="6" height="14" fill="#c35360"/>
+<rect x="434" y="402" width="6" height="14" fill="#c24f5d"/>
+<rect x="440" y="402" width="6" height="14" fill="#c14b5a"/>
+<rect x="446" y="402" width="6" height="14" fill="#c04856"/>
+<rect x="452" y="402" width="6" height="14" fill="#bf4453"/>
+<rect x="458" y="402" width="6" height="14" fill="#bd4050"/>
+<rect x="464" y="402" width="6" height="14" fill="#bc3c4c"/>
+<rect x="470" y="402" width="6" height="14" fill="#bb3949"/>
+<rect x="476" y="402" width="6" height="14" fill="#ba3545"/>
+<rect x="482" y="402" width="6" height="14" fill="#b93142"/>
+<rect x="488" y="402" width="6" height="14" fill="#b82e3f"/>
+<rect x="494" y="402" width="6" height="14" fill="#b72a3b"/>
+<rect x="500" y="402" width="6" height="14" fill="#b62638"/>
+<rect x="506" y="402" width="6" height="14" fill="#b52335"/>
+<rect x="512" y="402" width="6" height="14" fill="#b41f31"/>
+<rect x="518" y="402" width="6" height="14" fill="#b31b2e"/>
+<rect x="524" y="402" width="6" height="14" fill="#b2182b"/>
+<text x="536" y="413" font-size="11">1</text>
+</svg>

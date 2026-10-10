@@ -119,8 +119,10 @@ def collect(lab, eids, master_path):
     all_dirs = sorted(d for d in os.listdir(rbase)
                       if os.path.isdir(os.path.join(rbase, d)))
     for eid in eids:
-        # base dir plus any shard dirs "<eid>__<tag>"
-        groups = [d for d in all_dirs if d == eid or d.startswith(eid + "__")]
+        # Prefer shard dirs; fall back to the merged base dir only if no shards
+        # (the base dir is the concatenation of the shards -> would duplicate).
+        shards = [d for d in all_dirs if d.startswith(eid + "__")]
+        groups = shards if shards else ([eid] if eid in all_dirs else [])
         if not groups:
             print("  [skip] no observations for %s" % eid)
             continue

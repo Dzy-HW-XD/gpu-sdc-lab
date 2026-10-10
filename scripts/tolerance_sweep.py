@@ -45,30 +45,36 @@ def read_floats(path):
 
 
 def corrupted_at_levels(golden, fault, levels):
-    counts = [0] * len(levels)
-    n = min(len(golden), len(fault))
-    for i in range(n):
+    """Return a list of booleans: True if the run is corrupted (SDC) at that
+    level, i.e. some element exceeds abs_tol + rel_tol*|golden|.
+
+    We only need the MASKED-vs-SDC decision, so the scan stops as soon as
+    every level has already been seen to exceed (early exit). Non-finite
+    elements (fault or golden NaN/Inf) corrupt at every level.
+    """
+    n = len(levels)
+    if len(fault) != len(golden):
+        return [True] * n
+    done = [False] * n
+    n_elems = len(golden)
+    for i in range(n_elems):
         gv = golden[i]
         fv = fault[i]
-        if not (fv == fv) or fv == math.inf or fv == -math.inf:
-            for j in range(len(levels)):
-                counts[j] += 1
-            continue
-        if not (gv == gv) or gv == math.inf or gv == -math.inf:
-            for j in range(len(levels)):
-                counts[j] += 1
-            continue
+        if fv != fv or fv == math.inf or fv == -math.inf:
+            return [True] * n
+        if gv != gv or gv == math.inf or gv == -math.inf:
+            return [True] * n
         d = fv - gv
         ad = d if d >= 0.0 else -d
         ag = gv if gv >= 0.0 else -gv
-        for j, (_name, a, r) in enumerate(levels):
-            if ad > (a + r * ag):
-                counts[j] += 1
-    if len(fault) != len(golden):
-        extra = abs(len(fault) - len(golden))
-        for j in range(len(levels)):
-            counts[j] += extra
-    return counts
+        for j in range(n):
+            if not done[j]:
+                _name, a, r = levels[j]
+                if ad > (a + r * ag):
+                    done[j] = True
+        if all(done):
+            return done
+    return done
 
 
 def load_obs_dirs(lab, eids):
@@ -76,7 +82,15 @@ def load_obs_dirs(lab, eids):
     all_dirs = sorted(d for d in os.listdir(rbase)
                       if os.path.isdir(os.path.join(rbase, d)))
     for eid in eids:
-        groups = [d for d in all_dirs if d == eid or d.startswith(eid + "__")]
+        # Prefer shard dirs; only fall back to the merged base dir if no shards
+        # exist (the base dir is itself the concatenation of the shards).
+        shards = [d for d in all_dirs if d.startswith(eid + "__")]
+        if shards:
+            groups = shards
+        elif eid in all_dirs:
+            groups = [eid]
+        else:
+            groups = []
         for d in groups:
             p = os.path.join(rbase, d, "observations.jsonl")
             if not os.path.exists(p):
@@ -86,6 +100,25 @@ def load_obs_dirs(lab, eids):
                     line = line.strip()
                     if line:
                         yield eid, json.loads(line)
+
+
+def cell_keys(rec):
+    """Yield (axis, cell) pairs for one record, mirroring campaign._cell_keys."""
+    labels = rec.get("labels", {}) or {}
+    pr = rec.get("params", {}) or {}
+    fault = rec.get("fault", {}) or {}
+    inp = labels.get("input", "all")
+    if fault.get("bit_index") is not None:
+        yield "bit", "%s|bit%s" % (inp, fault["bit_index"])
+    if fault.get("opcode"):
+        yield "instruction", "%s|%s" % (inp, fault["opcode"])
+    if all(k in pr for k in ("M", "N", "K")):
+        yield "size", "%s|%sx%sx%s" % (inp, pr["M"], pr["N"], pr["K"])
+    if labels.get("position"):
+        yield "position", "%s|%s" % (inp, labels["position"])
+    if fault.get("register_class"):
+        yield "register", "%s|%s" % (inp, fault["register_class"])
+    yield "input", inp
 
 
 def main(argv=None):
@@ -109,53 +142,50 @@ def main(argv=None):
     outdir = util.ensure_dir(args.out or os.path.join(lab.results_dir, "_tolerance"))
 
     golden_cache = {}
-    overall = {name: {"masked": 0, "sdc": 0, "crash": 0} for name, _, _ in levels}
+    overall = {name: [0, 0, 0] for name, _, _ in levels}   # masked, sdc, crash
     by_input = {}
+    by_exp = {}
     by_cell = {}
+
+    def bump(store, key, name, kind):
+        d = store.setdefault(key, {n: [0, 0, 0] for n, _, _ in levels})
+        d[name][{"masked": 0, "sdc": 1, "crash": 2}[kind]] += 1
 
     for eid, rec in load_obs_dirs(lab, args.experiments):
         cls = rec.get("classification", "NOT_INJECTED")
         if cls in ("NOT_INJECTED", "NOT_TARGETED"):
             continue
-        labels = rec.get("labels", {})
+        labels = rec.get("labels", {}) or {}
         inp = labels.get("input", "all")
-        bit = rec.get("fault", {}).get("bit_index")
-        cell = "%s|bit%s" % (inp, bit) if bit is not None else inp
+        keys = list(cell_keys(rec))
 
         if cls == "CRASH":
             for name, _, _ in levels:
-                overall[name]["crash"] += 1
-                by_input.setdefault((eid, inp), {n: [0, 0, 0] for n, _, _ in levels})
-                by_cell.setdefault((eid, cell), {n: [0, 0, 0] for n, _, _ in levels})
-                by_input[(eid, inp)][name][2] += 1
-                by_cell[(eid, cell)][name][2] += 1
+                overall[name][2] += 1
+                bump(by_input, (eid, inp), name, "crash")
+                bump(by_exp, (eid,), name, "crash")
+                for axis, cell in keys:
+                    bump(by_cell, (eid, axis, cell), name, "crash")
             continue
 
         gpath = rec.get("golden_bin")
         fpath = rec.get("raw_out_bin")
         if not gpath or not fpath or not os.path.exists(gpath) or not os.path.exists(fpath):
             continue
-        if gpath not in golden_cache:
-            golden_cache[gpath] = read_floats(gpath)
-        golden = golden_cache[gpath]
+        golden = golden_cache.get(gpath)
+        if golden is None:
+            golden = read_floats(gpath)
+            golden_cache[gpath] = golden
         fault = read_floats(fpath)
         counts = corrupted_at_levels(golden, fault, levels)
 
-        for (name, _, _), c in zip(levels, counts):
-            b = overall[name]
-            mk = "MASKED" if c == 0 else "SDC"
-            if mk == "MASKED":
-                b["masked"] += 1
-            else:
-                b["sdc"] += 1
-            bi = by_input.setdefault((eid, inp), {n: [0, 0, 0] for n, _, _ in levels})[name]
-            bc = by_cell.setdefault((eid, cell), {n: [0, 0, 0] for n, _, _ in levels})[name]
-            if mk == "MASKED":
-                bi[0] += 1
-                bc[0] += 1
-            else:
-                bi[1] += 1
-                bc[1] += 1
+        for (name, _, _), corrupted in zip(levels, counts):
+            kind = "sdc" if corrupted else "masked"
+            overall[name][0 if kind == "masked" else 1] += 1
+            bump(by_input, (eid, inp), name, kind)
+            bump(by_exp, (eid,), name, kind)
+            for axis, cell in keys:
+                bump(by_cell, (eid, axis, cell), name, kind)
 
     # overall table
     with open(os.path.join(outdir, "tolerance_overall.csv"), "w", newline="",
@@ -164,34 +194,48 @@ def main(argv=None):
         w.writerow(["level", "abs_tol", "rel_tol", "total", "masked", "sdc",
                     "crash", "sdc_rate"])
         for (name, a, r) in levels:
-            b = overall[name]
-            n = b["masked"] + b["sdc"] + b["crash"]
-            rate = (b["sdc"] / n) if n else 0.0
-            w.writerow([name, a, r, n, b["masked"], b["sdc"], b["crash"],
-                        "%.6f" % rate])
+            m, s, c = overall[name]
+            n = m + s + c
+            w.writerow([name, a, r, n, m, s, c, "%.6f" % ((s / n) if n else 0.0)])
 
-    def write_table(path, agg, keyname):
+    # per-experiment table
+    with open(os.path.join(outdir, "tolerance_by_experiment.csv"), "w",
+              newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["experiment_id", "level", "masked", "sdc", "crash", "total",
+                    "sdc_rate"])
+        for eid in sorted(by_exp):
+            for (name, _, _) in levels:
+                m, s, c = by_exp[eid][name]
+                n = m + s + c
+                w.writerow([eid[0], name, m, s, c, n,
+                            "%.6f" % ((s / n) if n else 0.0)])
+
+    def write_table(path, agg, keynames, keyorder):
         with open(path, "w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
-            w.writerow(["experiment_id", keyname, "level", "masked", "sdc",
-                        "crash", "total", "sdc_rate"])
-            for (eid, key) in sorted(agg, key=lambda k: (k[0], str(k[1]))):
+            w.writerow(keynames + ["level", "masked", "sdc", "crash", "total",
+                                   "sdc_rate"])
+            for key in sorted(agg, key=lambda k: keyorder(k)):
                 for (name, _, _) in levels:
-                    m, s, c = agg[(eid, key)][name]
+                    m, s, c = agg[key][name]
                     n = m + s + c
-                    w.writerow([eid, key, name, m, s, c, n,
-                                "%.6f" % ((s / n) if n else 0.0)])
+                    w.writerow(list(key) + [name, m, s, c, n,
+                                            "%.6f" % ((s / n) if n else 0.0)])
 
-    write_table(os.path.join(outdir, "tolerance_by_input.csv"), by_input, "input")
-    write_table(os.path.join(outdir, "tolerance_by_cell.csv"), by_cell, "cell")
+    write_table(os.path.join(outdir, "tolerance_by_input.csv"), by_input,
+                ["experiment_id", "input"], lambda k: (k[0], str(k[1])))
+    write_table(os.path.join(outdir, "tolerance_by_cell.csv"), by_cell,
+                ["experiment_id", "axis", "cell"],
+                lambda k: (k[0], k[1], str(k[2])))
 
-    print("wrote tolerance_overall.csv / tolerance_by_input.csv / tolerance_by_cell.csv -> %s"
-          % outdir)
+    print("wrote tolerance_overall.csv / tolerance_by_experiment.csv / "
+          "tolerance_by_input.csv / tolerance_by_cell.csv -> %s" % outdir)
     for (name, a, r) in levels:
-        b = overall[name]
-        n = b["masked"] + b["sdc"] + b["crash"]
+        m, s, c = overall[name]
+        n = m + s + c
         print("  %-10s abs=%.0e rel=%.0e  SDC %d/%d = %.4f"
-              % (name, a, r, b["sdc"], n, (b["sdc"] / n) if n else 0.0))
+              % (name, a, r, s, n, (s / n) if n else 0.0))
     return 0
 
 
