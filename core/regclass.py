@@ -23,6 +23,9 @@ import re
 from core import util
 
 FP32_OPS = ("FFMA", "FADD", "FMUL", "FFMA32I", "FADD32I", "FMUL32I")
+# Tensor-core matrix instructions: their destination registers are the FP32
+# accumulators (D = A*B + C), so every destination register is an accumulator.
+TC_OPS = ("HMMA", "IMMA")
 
 _REG = re.compile(r"\b(R\d+|UR\d+|SR\d+|P\d+|RZ|URZ|SRZ)\b")
 _LINE = re.compile(r"/\*([0-9a-fA-F]+)\*/\s+([A-Z][A-Z0-9._]*)\s+([^;]*);")
@@ -54,6 +57,8 @@ def _first_reg(text):
 def classify_instruction(opcode, operands_text):
     """Return 'accumulator' | 'temporary' | 'other' for one SASS instruction."""
     base = opcode.split(".")[0]
+    if base in TC_OPS:
+        return "accumulator"   # HMMA/IMMA destination = FP32 accumulator fragment
     if base not in FP32_OPS:
         return "other"
     parts = [p.strip() for p in operands_text.split(",") if p.strip()]
@@ -79,7 +84,8 @@ def parse_sass(text):
         pc = int(m.group(1), 16)
         opcode = m.group(2)
         operands = m.group(3)
-        if opcode.split(".")[0] not in FP32_OPS:
+        base = opcode.split(".")[0]
+        if base not in FP32_OPS and base not in TC_OPS:
             continue
         table[pc] = {
             "opcode": opcode,

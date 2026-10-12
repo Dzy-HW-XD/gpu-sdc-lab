@@ -23,6 +23,7 @@ class Workload(object):
     name = "base"
     kernel_token = None
     input_flags = {}
+    input_dtype = "fp32"   # "fp32" or "bf16" (how inputs are materialized/read)
     output_specs = [{"name": "out", "suffix": ".bin", "format": "f32"}]
 
     def __init__(self, params, lab):
@@ -94,14 +95,19 @@ class Workload(object):
         spec = self.params.get("input_spec") or {}
         if not spec:
             return {}
+        dtype = getattr(self, "input_dtype", "fp32")
         cdir = os.path.join(self.lab.results_dir, "_inputs",
                             util.short_hash(self.signature()))
         util.ensure_dir(cdir)
         paths = {}
         for name, gen_spec in spec.items():
-            p = os.path.join(cdir, "%s.bin" % name)
+            p = os.path.join(cdir, "%s.%s.bin" % (name, dtype))
             if not os.path.exists(p):
-                inputgen.materialize(gen_spec, self.input_size(name), p)
+                # write to a unique temp file then atomically rename, so
+                # concurrent shards can never observe a partially-written input
+                tmp = "%s.tmp.%d" % (p, os.getpid())
+                inputgen.materialize(gen_spec, self.input_size(name), tmp, dtype=dtype)
+                os.replace(tmp, p)
             paths[name] = p
         return paths
 

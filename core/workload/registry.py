@@ -22,12 +22,15 @@ def get_workload(name, params, lab):
 
 def _bootstrap():
     from core.workload.gemm import GEMMWorkload
+    from core.workload.gemm_bf16 import GEMMBF16Workload
     from core.workload.reduce import ReduceWorkload
     from core.workload.conv2d import Conv2dWorkload
     from core.workload.softmax import SoftmaxWorkload
     from core.workload.attention import AttentionWorkload
     from core.workload.mlp import MLPWorkload
-    for name, cls in (("gemm", GEMMWorkload), ("reduce", ReduceWorkload),
+    for name, cls in (("gemm", GEMMWorkload),
+                      ("gemm_bf16", GEMMBF16Workload),
+                      ("reduce", ReduceWorkload),
                       ("conv2d", Conv2dWorkload), ("softmax", SoftmaxWorkload),
                       ("attention", AttentionWorkload), ("mlp", MLPWorkload)):
         if name not in _REGISTRY:

@@ -182,7 +182,8 @@ shared `others` bucket and are only counted when the hit opcode is in the set
 
 | name | computation | instruction coverage |
 |---|---|---|
-| `gemm` | `C=A×B` (FP32, deterministic) | fp32, ld, gp, pr |
+| `gemm` | `C=A×B` (FP32, deterministic) — scalar CUDA-Core era | fp32, ld, gp, pr |
+| `gemm_bf16` | `C=A×B` (BF16×BF16 → FP32, cuBLAS Tensor Core) | **mma (HMMA)** |
 | `reduce` | block reduction + `atomicAdd` | atom, fp32, ld, gp |
 | `conv2d` | direct 2-D convolution | fp32, ld, gp |
 | `softmax` | row-wise softmax | fp32, ld, gp, MUFU/others |
@@ -193,16 +194,24 @@ All are deterministic (bit-exact golden). `mlp` emits six named tensors
 (`A1, logits, probs, loss, dW1, dW2`) so error propagation can be observed per
 layer. `scripts/smoke_workloads.sh` verifies determinism for all of them.
 
+`gemm_bf16` is the current focus: BF16 inputs, FP32 accumulation via cuBLAS
+Tensor Core (HMMA), with HMMA/FP32-accumulator fault injection. See
+[docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md). The FP32 scalar GEMM experiments
+(015–019) are archived ([docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md)).
+
 ## Input generators
 
-`core/inputgen.py` produces deterministic float32 tensors for the study:
+`core/inputgen.py` produces deterministic tensors for the study:
 `uniform, normal, lognormal, sparse, cancellation, near_overflow, correlated,
-adversarial, ones, near_zero, near_one, extreme, small, large`, plus `real`
-(load a tensor from disk). A workload with an `input_spec` (see
-`experiments/008_*`, `015_*`) materialises these into `results/_inputs/` and
+adversarial, ones, near_zero, near_one, extreme, small, large`, plus the
+LLM-activation-oriented `heavy_tail_act, residual_stream, swiglu_gated` and
+`real` (load a tensor from disk). Tensors are materialised as FP32 or **BF16**
+(raw uint16; `--dtype` on the workload). A workload with an `input_spec` (see
+`experiments/015_*`, `020_*`) materialises them into `results/_inputs/` and
 passes them to the kernel (`--input/--inputA/...`). `./sdc-lab gen-input`
 writes one directly; `scripts/features.py` extracts interpretable features
-(dynamic range, cancellation, exponent stats, ...). See
+(dynamic range, kurtosis, outlier/nonneg fraction, cancellation, exponent
+stats, ...). See
 [docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md) for what each family means,
 with concrete example values.
 

@@ -16,7 +16,8 @@ from core.injection.base import FaultInjector
 PROFILE_LOG = "nvbitfi-injection-log-temp.txt"
 INJECTION_INFO = "nvbitfi-injection-info.txt"
 
-GROUP_KEYS = ("fp64", "fp32", "ld", "pr", "nodest", "others", "atom", "gppr", "gp")
+GROUP_KEYS = ("fp64", "fp32", "ld", "pr", "nodest", "others", "atom", "mma",
+              "gppr", "gp")
 
 
 def parse_profile_line(line):

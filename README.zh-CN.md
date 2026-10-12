@@ -188,8 +188,15 @@ opcode-filtered 的叶子在共享的 `others` 桶里采样，只有命中的 op
 cancellation / near_overflow / correlated / adversarial / ones / near_zero /
 near_one / extreme / small / large` + `real`。带 `input_spec` 的实验会把输入
 物化到 `results/_inputs/` 并传给 kernel。`./sdc-lab gen-input` 可直接生成。
-`scripts/features.py` 提取可解释的输入特征（动态范围、抵消、指数统计等）。
-每种输入分布的含义与示例见 [docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md)。
+`scripts/features.py` 提取可解释的输入特征（动态范围、峰度、离群/非负比例、
+抵消、指数统计等）。每种输入分布的含义与示例见
+[docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md)。
+
+**当前方向（Tensor Core）**：新增 `gemm_bf16`（BF16×BF16 → FP32，cuBLAS
+Tensor Core / HMMA），面向 HMMA 的 FP32 累加器注错；新增面向 LLM 激活的输入族
+`heavy_tail_act / residual_stream / swiglu_gated`（BF16 物化）。详见
+[docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md)；旧的 FP32 标量 GEMM 实验（015–019）
+已归档，见 [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md)。
 
 ## 输入相关性批量实验（015–019）
 

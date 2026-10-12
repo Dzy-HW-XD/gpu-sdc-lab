@@ -1,0 +1,19 @@
+id: 020_tc_input_bit_early
+kind: input_grid
+axis: bit
+workload: gemm_bf16
+injector: nvbitfi
+groups: [mma]
+fault_type: bitflip
+inputs: [normal, heavy_tail_act, residual_stream, swiglu_gated]
+bits: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31]
+injections_per_cell: 30
+# "early" of the FP32 accumulator lifetime = first third of the HMMA stream
+inst_range: [0.0, 0.3334]
+input_seed: 1234
+seed: 20261020
+workload_params:
+  M: 1024
+  N: 1024
+  K: 1024
+  dtype: bf16

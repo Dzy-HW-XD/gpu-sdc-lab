@@ -1,0 +1,14 @@
+id: 023_tc_input_size
+kind: input_grid
+axis: size
+workload: gemm_bf16
+injector: nvbitfi
+groups: [mma]
+fault_type: bitflip
+inputs: [normal, heavy_tail_act, residual_stream, swiglu_gated]
+sizes: [[512, 512, 512], [1024, 1024, 1024], [2048, 2048, 2048]]
+injections_per_cell: 30
+input_seed: 1234
+seed: 20261023
+workload_params:
+  dtype: bf16

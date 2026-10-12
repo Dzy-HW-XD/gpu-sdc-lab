@@ -123,9 +123,18 @@ class Runner(object):
         jpath = os.path.join(cdir, "profile.json")
         with _file_lock(os.path.join(cdir, "profile.lock")):
             if os.path.exists(jpath):
-                return util.read_json(jpath)
+                cached = util.read_json(jpath)
+                if cached.get("runs"):
+                    return cached
+                os.remove(jpath)   # stale/failed (empty) profile -> regenerate
             inj = get_injector("nvbitfi", self.lab)
             prof = inj.profile(wl, cdir)
+            if not prof.get("runs"):
+                # never cache a profile with no kernels (transient failure or a
+                # bad input); surface it so the shard can retry.
+                raise RuntimeError(
+                    "profiler returned no kernels for %s: %s"
+                    % (wl.name, (prof.get("run") or {}).get("stderr", "")[-300:]))
             util.write_json(jpath, prof)
         return prof
 
@@ -249,7 +258,13 @@ class Runner(object):
                 gbin, out_prefix, wl.output_specs)
             gpu = self.observers.gpu.observe()
             meta = res["fault_meta"]
-            register_class = self._regclass(wl, meta.get("pc_offset"))
+            _op = (meta.get("opcode") or "").split(".")[0]
+            if _op in ("HMMA", "IMMA"):
+                # cuBLAS kernels are not in our binary, so no SASS table; but a
+                # tensor-core destination register is always the FP32 accumulator.
+                register_class = "accumulator"
+            else:
+                register_class = self._regclass(wl, meta.get("pc_offset"))
             injected = bool(meta["injected"] or meta["kernel_error"] or runtime_obs["crash"])
             classification, reason = classify(runtime_obs, comparison, injected, self.lab.oracle)
             classification_raw = classification

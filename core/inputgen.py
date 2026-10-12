@@ -184,6 +184,54 @@ def _large(n, seed, mag=1e3):
     return [_f32(r.uniform(-mag, mag)) for _ in range(n)]
 
 
+@register("heavy_tail_act")
+def _heavy_tail_act(n, seed, outlier_frac=0.01, outlier_scale=1e3, sigma=1.0):
+    """LLM-activation-like: mostly N(0,sigma) with a few extreme 'massive
+    activation' channels (long tail). Configurable outlier ratio and scale."""
+    r = random.Random(seed)
+    out = []
+    for _ in range(n):
+        if r.random() < outlier_frac:
+            v = outlier_scale * (1.0 + abs(r.gauss(0.0, 1.0)))
+            out.append(_f32(v if r.random() < 0.5 else -v))
+        else:
+            out.append(_f32(r.gauss(0.0, sigma)))
+    return out
+
+
+@register("residual_stream")
+def _residual_stream(n, seed, channel_std=2.0, period=128, rank_gain=0.5,
+                     sigma=1.0):
+    """Residual-stream-like: per-channel scale differences (log-normal) plus a
+    shared correlated component (low-rank / dimension correlation)."""
+    r = random.Random(seed)
+    period = max(1, int(period))
+    scale = [math.exp(r.gauss(0.0, channel_std)) for _ in range(period)]
+    shared = [r.gauss(0.0, sigma) for _ in range(period)]
+    out = []
+    for i in range(n):
+        c = i % period
+        v = scale[c] * (r.gauss(0.0, sigma) + rank_gain * shared[c])
+        out.append(_f32(v))
+    return out
+
+
+@register("swiglu_gated")
+def _swiglu_gated(n, seed, gate_sparse=0.5, sigma=1.0, neg_gate=-6.0):
+    """SwiGLU-like: gated activation x*silu(gate); a fraction of channels are
+    gated off (strongly negative gate -> ~0), the rest pass through."""
+    r = random.Random(seed)
+    out = []
+    for _ in range(n):
+        x = r.gauss(0.0, sigma)
+        if r.random() < gate_sparse:
+            g = neg_gate
+        else:
+            g = r.gauss(0.0, sigma)
+        out.append(_f32(x * (g / (1.0 + math.exp(-g)))))
+    return out
+
+
 @register("real")
 def _real(n, seed, path=None):
     if not path:
@@ -207,7 +255,8 @@ def _real(n, seed, path=None):
 # --------------------------------------------------------------------------
 FAMILIES = ["uniform", "normal", "lognormal", "sparse", "cancellation",
             "near_overflow", "correlated", "adversarial",
-            "ones", "near_zero", "near_one", "extreme", "small", "large"]
+            "ones", "near_zero", "near_one", "extreme", "small", "large",
+            "heavy_tail_act", "residual_stream", "swiglu_gated"]
 
 
 def generate(spec, n):
@@ -222,9 +271,29 @@ def generate(spec, n):
     return array.array("f", vals)
 
 
-def materialize(spec, n, path):
+def to_bf16_bytes(values):
+    """Round-to-nearest-even float32 -> bfloat16 raw little-endian bytes."""
+    import struct
+    pack = struct.Struct("<H").pack
+    unpack_i = struct.Struct("<I").unpack
+    pack_f = struct.Struct("<f").pack
+    out = bytearray()
+    for x in values:
+        u = unpack_i(pack_f(float(x)))[0]
+        lsb = (u >> 16) & 1
+        u = (u + 0x7FFF + lsb) & 0xFFFFFFFF
+        out += pack((u >> 16) & 0xFFFF)
+    return bytes(out)
+
+
+def materialize(spec, n, path, dtype="fp32"):
+    """Write a generated tensor to `path` as fp32 or bf16 raw little-endian."""
     arr = generate(spec, n)
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with open(path, "wb") as f:
-        arr.tofile(f)
+    if dtype in ("bf16", "bfloat16"):
+        with open(path, "wb") as f:
+            f.write(to_bf16_bytes(arr))
+    else:
+        with open(path, "wb") as f:
+            arr.tofile(f)
     return path

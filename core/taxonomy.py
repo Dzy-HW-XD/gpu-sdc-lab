@@ -39,7 +39,7 @@ TAXONOMY = {
         "fmul": {"group": "fp32", "opcodes": _FP32_FMUL},
         "fp16": {"group": "others", "opcodes": _FP16},
         "int": {"group": "others", "opcodes": _INT},
-        "mma": {"group": "others", "opcodes": _MMA},
+        "mma": {"group": "mma"},   # dedicated HMMA/IMMA group (patch_nvbitfi.py)
     },
     "memory": {
         "load": {"group": "ld"},
@@ -58,7 +58,8 @@ TAXONOMY = {
 }
 
 # groups NVBitFI provides as dedicated buckets
-DEDICATED_GROUPS = {"fp64", "fp32", "ld", "pr", "others", "gppr", "gp", "atom"}
+DEDICATED_GROUPS = {"fp64", "fp32", "ld", "pr", "others", "gppr", "gp",
+                    "atom", "mma"}
 
 # convenience aliases (NVBitFI group names that differ from the leaf name)
 ALIASES = {

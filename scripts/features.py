@@ -19,11 +19,14 @@ def features_array(a):
         return {}
     s = 0.0
     s2 = 0.0
+    s4 = 0.0
     abs_max = 0.0
     abs_min_pos = float("inf")
     zeros = 0
     near_ovf = 0
     signs = 0
+    pos = 0
+    absvals = []
     exp_sum = 0.0
     exp2_sum = 0.0
     prev_sign = None
@@ -31,7 +34,11 @@ def features_array(a):
         x = float(v)
         s += x
         s2 += x * x
+        s4 += x * x * x * x
         ax = abs(x)
+        absvals.append(ax)
+        if x > 0:
+            pos += 1
         if ax > abs_max:
             abs_max = ax
         if 0.0 < ax < abs_min_pos:
@@ -56,6 +63,9 @@ def features_array(a):
     exp_mean = exp_sum / nz if nz else 0.0
     exp_std = math.sqrt(max(0.0, exp2_sum / nz - exp_mean * exp_mean)) if nz else 0.0
     log2_range = (math.log2(abs_max) - math.log2(abs_min_pos)) if (abs_max > 0 and abs_min_pos < float("inf")) else 0.0
+    median_abs = sorted(absvals)[n // 2] if absvals else 0.0
+    outlier_frac = (sum(1 for v in absvals if v > 10.0 * median_abs) / n) if median_abs > 0 else 0.0
+    kurtosis = (s4 / n) / (var * var) if var > 0 else 0.0
     return {
         "log2_range": log2_range,
         "mean": mean,
@@ -67,6 +77,9 @@ def features_array(a):
         "effective_bits": math.log2(abs_max / abs_min_pos) if abs_min_pos < float("inf") and abs_min_pos > 0 else 0.0,
         "near_overflow_frac": near_ovf / n,
         "sign_flip_frac": signs / n,
+        "kurtosis": kurtosis,
+        "outlier_frac": outlier_frac,
+        "nonneg_frac": pos / n,
     }
 
 

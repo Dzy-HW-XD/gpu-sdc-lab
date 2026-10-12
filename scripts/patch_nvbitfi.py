@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """Apply the gpu-sdc-lab NVBitFI patches (idempotent).
 
-Currently adds one dedicated instruction group `atom` (ATOM/ATOMS/SUATOM),
-appended after the existing groups, following the documented 4-file recipe:
+Patches applied:
+  1. dedicated `atom` group (ATOM/ATOMS/SUATOM)
+  2. dedicated `mma` group (HMMA/IMMA) + fix the HMMA destination-register
+     count for sm_80 (a HMMA.16816 accumulates into 4 FP32 registers, but
+     upstream extractSize() returns 64 -> only 2). This is required to inject
+     into Tensor-Core FP32 accumulators.
 
-  common/arch.h        - add G_ATOM to the group enum
-  common/globals.h     - group name + atomInst[] table + getOpGroupNum()
+  common/arch.h        - add G_ATOM / G_MMA to the group enum (before G_GPPR)
+  common/globals.h     - group names + atomInst[]/mmaInst[] + getOpGroupNum()
+                         + extractSize() HMMA fix
   injector/inject_funcs.cu - group check + switch case
-  scripts/params.py    - IGID_STR name
+  scripts/params.py    - IGID_STR names
 
 Usage: patch_nvbitfi.py <path-to-tools/nvbitfi>
 """
@@ -125,7 +130,85 @@ def main():
         '"atom"',
     )
 
-    print("atom-group patch applied.")
+    # ---------------- mma group (HMMA/IMMA) + HMMA dest fix ----------------
+    print("applying mma-group + HMMA-destination patch")
+
+    # 9. arch.h: add G_MMA between G_ATOM and G_GPPR (keep gppr/gp last two)
+    apply(
+        arch,
+        "\tG_ATOM, // atomic instructions (ATOM/ATOMS/SUATOM)\n"
+        "\tG_GPPR, // instructions that write to general purpose and predicate registers\n",
+        "\tG_ATOM, // atomic instructions (ATOM/ATOMS/SUATOM)\n"
+        "\tG_MMA, // tensor-core matrix instructions (HMMA/IMMA)\n"
+        "\tG_GPPR, // instructions that write to general purpose and predicate registers\n",
+        "G_MMA",
+    )
+
+    # 10. globals.h: group name
+    apply(
+        glob,
+        '"others", "atom", "gppr"',
+        '"others", "atom", "mma", "gppr"',
+        '"mma"',
+    )
+
+    # 11. globals.h: opcode table after atomInst
+    apply(
+        glob,
+        "int atomInst[] = {\n ATOM, ATOMS, SUATOM\n };\n",
+        "int atomInst[] = {\n ATOM, ATOMS, SUATOM\n };\n\n"
+        "int mmaInst[] = {\n IMMA, HMMA\n };\n",
+        "int mmaInst[]",
+    )
+
+    # 12. globals.h: classify mma before the generic "others" bucket
+    apply(
+        glob,
+        "\tif (checkOpType(opcode, otherInst, sizeof(otherInst)/sizeof(int))) \n"
+        "\t\treturn G_OTHERS;\n",
+        "\tif (checkOpType(opcode, mmaInst, sizeof(mmaInst)/sizeof(int)))\n"
+        "\t\treturn G_MMA;\n"
+        "\tif (checkOpType(opcode, otherInst, sizeof(otherInst)/sizeof(int))) \n"
+        "\t\treturn G_OTHERS;\n",
+        "return G_MMA",
+    )
+
+    # 13. globals.h: HMMA writes 4 FP32 accumulator regs on sm_80 (not 2)
+    apply(
+        glob,
+        '\tif (opcode.find("HMMA") != std::string::npos)\n\t\treturn 64;\n',
+        '\tif (opcode.find("HMMA") != std::string::npos)\n'
+        '\t\treturn 128; // sm_80: 4 FP32 accumulator registers\n',
+        "return 128; // sm_80",
+    )
+
+    # 14. inject_funcs.cu: reject non-mma instructions for igid == G_MMA
+    apply(
+        inj,
+        "(igid == G_ATOM && grp_index != G_ATOM) ||\n",
+        "(igid == G_ATOM && grp_index != G_ATOM) ||\n"
+        " \t\t\t(igid == G_MMA && grp_index != G_MMA) ||\n",
+        "G_MMA && grp_index != G_MMA",
+    )
+
+    # 15. inject_funcs.cu: switch case (mma uses the dest-register path)
+    apply(
+        inj,
+        "\t\tcase G_ATOM: // inject into the destination of an atomic instruction\n",
+        "\t\tcase G_MMA: // inject into an HMMA/IMMA accumulator register\n"
+        "\t\tcase G_ATOM: // inject into the destination of an atomic instruction\n",
+        "case G_MMA:",
+    )
+
+    # 16. params.py: IGID_STR names (same order)
+    apply(
+        params,
+        '[ "fp64", "fp32", "ld", "pr", "nodest", "others", "atom", "gppr", "gp" ]',
+        '[ "fp64", "fp32", "ld", "pr", "nodest", "others", "atom", "mma", "gppr", "gp" ]',
+        '"mma"',
+    )
+
+    print("atom + mma patches applied.")
 
 
 if __name__ == "__main__":

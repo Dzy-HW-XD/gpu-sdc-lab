@@ -16,8 +16,9 @@ GROUP_IDS = {
     "nodest": 4,
     "others": 5,
     "atom": 6,   # added by scripts/patch_nvbitfi.py (ATOM/ATOMS/SUATOM)
-    "gppr": 7,
-    "gp": 8,
+    "mma": 7,    # added by scripts/patch_nvbitfi.py (HMMA/IMMA tensor cores)
+    "gppr": 8,
+    "gp": 9,
 }
 GROUP_NAMES = {v: k for k, v in GROUP_IDS.items()}
 

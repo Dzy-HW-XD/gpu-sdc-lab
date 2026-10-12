@@ -63,7 +63,7 @@ def make_input_spec(workload, family, seed, real_path=None):
             d["path"] = real_path
         return d
 
-    if workload == "gemm":
+    if workload in ("gemm", "gemm_bf16"):
         return {"A": g(0), "B": g(1)}
     if workload in ("reduce", "softmax", "attention"):
         return {"X": g(0)}
@@ -213,7 +213,7 @@ def build_cases(expt):
                 wp = dict(base_wp)
                 labels = {"input": fam, "axis": axis, "workload": wl}
                 leaf = None
-                rng_range = (0.0, 1.0)
+                rng_range = tuple(expt.get("inst_range", (0.0, 1.0)))
                 bit = None
                 if axis == "bit":
                     bit = int(val)
