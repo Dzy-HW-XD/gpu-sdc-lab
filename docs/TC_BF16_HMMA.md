@@ -91,12 +91,21 @@ python3 scripts/heatmap.py results/_tc_campaign/cells.csv --axis bit \
     --experiment 021_tc_input_bit_middle --annotate --outdir results/_tc_campaign/figs
 ```
 
+## Tolerance levels (L0–L5), offline
+
+The injection run-time classification is exact (L0). In addition the same
+injections are re-classified offline at levels L1..L5 = `(1e-7,1e-6) ..
+(1e-3,1e-2)` (synchronous ×10) using the preserved raw outputs
+(`scripts/tolerance_sweep.py`, `scripts/tolerance_heatmaps.py`); sees
+`results/_tc_tolerance/TOLERANCE_LEVELS.md` and its `figs/` (24 heatmaps).
+
 ## Heatmaps
 
 `results/_tc_campaign/figs/` contains `input × bit` SDC-rate heatmaps per
-position (early/middle/late) and an `input × size` heatmap. Axes, colour scale,
-sample size and the statistical criterion (exact golden comparison) are uniform;
-cells with misses / insufficient samples are marked (see `heatmap.py`).
+position (early/middle/late) and an `input × size` heatmap (exact / L0). The
+per-tolerance-level versions live in `results/_tc_tolerance/figs/`. Axes, colour
+scale, sample size and the statistical criterion are uniform; cells with misses
+/ insufficient samples are marked (see `heatmap.py`).
 
 ## Note / open item (position semantics)
 

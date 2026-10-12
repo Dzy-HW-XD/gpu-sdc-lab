@@ -30,6 +30,11 @@ DEFAULT_AXIS = {
     "017_input_size_gemm": "size",
     "018_input_position_gemm": "position",
     "019_register_class_gemm": "register",
+    # Tensor-Core BF16 campaign
+    "020_tc_input_bit_early": "bit",
+    "021_tc_input_bit_middle": "bit",
+    "022_tc_input_bit_late": "bit",
+    "023_tc_input_size": "size",
 }
 
 

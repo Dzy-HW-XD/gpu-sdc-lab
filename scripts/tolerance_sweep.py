@@ -148,9 +148,14 @@ def main(argv=None):
 
     if args.levels:
         levels = []
-        for k, pair in enumerate(args.levels.split(",")):
+        for k, tok in enumerate(args.levels.split(",")):
+            tok = tok.strip()
+            if "=" in tok:                      # name=abs:rel
+                name, pair = tok.split("=", 1)
+            else:                               # abs:rel -> L0, L1, ...
+                name, pair = "L%d_%s" % (k, tok), tok
             a, _, r = pair.partition(":")
-            levels.append(("L%d_%s" % (k + 1, pair), float(a), float(r)))
+            levels.append((name, float(a), float(r)))
     else:
         levels = DEFAULT_LEVELS
 
