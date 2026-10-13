@@ -144,6 +144,9 @@ def main(argv=None):
     p.add_argument("--out", default=None, help="output dir (default results/_tolerance)")
     p.add_argument("--levels", default=None,
                    help="comma list of abs:rel, e.g. 1e-7:1e-6,1e-5:1e-4")
+    p.add_argument("--samples", default=None,
+                   help="also write per-injection rows "
+                        "(experiment_id,input,bit,level,classification,max_abs_error)")
     args = p.parse_args(argv)
 
     if args.levels:
@@ -172,12 +175,28 @@ def main(argv=None):
         d = store.setdefault(key, {n: [0, 0, 0] for n, _, _ in levels})
         d[name][{"masked": 0, "sdc": 1, "crash": 2}[kind]] += 1
 
+    samples_f = None
+    samples_w = None
+    if args.samples:
+        samples_f = open(args.samples, "w", newline="", encoding="utf-8")
+        samples_w = csv.writer(samples_f)
+        samples_w.writerow(["experiment_id", "input", "bit", "level",
+                            "classification", "max_abs_error"])
+
+    def sample_row(eid, inp, bit, name, kind, mag):
+        if samples_w:
+            samples_w.writerow([eid, inp, "" if bit is None else bit, name,
+                                kind, mag])
+
     for eid, rec in load_obs_dirs(lab, args.experiments):
         cls = rec.get("classification", "NOT_INJECTED")
         if cls in ("NOT_INJECTED", "NOT_TARGETED"):
             continue
         labels = rec.get("labels", {}) or {}
+        fault = rec.get("fault", {}) or {}
         inp = labels.get("input", "all")
+        bit = fault.get("bit_index")
+        mag = (rec.get("observation") or {}).get("max_abs_error", "")
         keys = list(cell_keys(rec))
 
         if cls == "CRASH":
@@ -187,6 +206,7 @@ def main(argv=None):
                 bump(by_exp, (eid,), name, "crash")
                 for axis, cell in keys:
                     bump(by_cell, (eid, axis, cell), name, "crash")
+                sample_row(eid, inp, bit, name, "CRASH", mag)
             continue
 
         gpath = rec.get("golden_bin")
@@ -207,6 +227,7 @@ def main(argv=None):
             bump(by_exp, (eid,), name, kind)
             for axis, cell in keys:
                 bump(by_cell, (eid, axis, cell), name, kind)
+            sample_row(eid, inp, bit, name, "SDC" if corrupted else "MASKED", mag)
 
     # overall table
     with open(os.path.join(outdir, "tolerance_overall.csv"), "w", newline="",
@@ -257,6 +278,9 @@ def main(argv=None):
         n = m + s + c
         print("  %-10s abs=%.0e rel=%.0e  SDC %d/%d = %.4f"
               % (name, a, r, s, n, (s / n) if n else 0.0))
+    if samples_f:
+        samples_f.close()
+        print("wrote %s" % args.samples)
     return 0
 
 

@@ -104,13 +104,16 @@ injections are re-classified offline at levels L1..L5 = `(1e-7,1e-6) ..
 `scripts/plot_sdc_raw.py` (needs matplotlib; local analysis only) plots **every**
 SDC sample as a point: x = bit 0–31, y = |C'−golden| (log scale), coloured by
 input distribution, with a pooled median line, the exponent region (23–30)
-shaded and a bottom panel of N_sdc / N_masked per bit. One figure per position:
+shaded and a bottom panel of N_sdc / N_masked per bit. One figure per
+(accumulator position × tolerance level):
 
 ```
-results/_tc_campaign/figs/bit_diff_early.svg   (+ _counts.csv)
-results/_tc_campaign/figs/bit_diff_middle.svg
-results/_tc_campaign/figs/bit_diff_late.svg
+results/_tc_campaign/figs/bit_diff_{early,middle,late}_L{0..5}.svg  (+ _counts.csv)
 ```
+
+(`results/_tc_tolerance/samples.csv` holds the per-injection
+`experiment_id,input,bit,level,classification,max_abs_error` used to plot each
+level; produced by `scripts/tolerance_sweep.py --samples`.)
 
 ## Heatmaps
 
