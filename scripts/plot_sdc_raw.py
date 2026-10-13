@@ -6,8 +6,12 @@ Two modes:
   * --samples <samples.csv>  (per-injection rows produced by tolerance_sweep.py)
       -> for every position (early/middle/late) and every level L0..L5,
          scatter the SDC samples: x = bit, y = |C'-golden| (log), coloured by
-         input distribution, with the pooled median line, the exponent region
-         shaded, the sign bit marked, and a bottom panel of N_sdc / N_masked.
+         input distribution. Overlaid are two branch-median lines split by the
+         per-input output scale G (G = median|d|(bit0..20) * 2^(23-bit)):
+           * explode  branch : |d| >  K*G   (exponent blow-up)
+           * collapse branch : |d| <= K*G   (value crushed toward zero)
+         The exponent region is shaded, the sign bit marked, and a bottom panel
+         shows N_sdc / N_masked.
   * (default) --master <master.csv>  (strict/L0 only, legacy single figure).
 
 Outputs SVG (git-friendly). Requires matplotlib (local analysis dependency).
@@ -109,7 +113,33 @@ def collect_master(recs, eid):
     return per, sdc, masked, crash
 
 
-def draw(tag, level, per, sdc, masked, crash, outpath):
+def compute_input_scale(recs):
+    """Per-input output scale G, from the current samples only.
+
+    G_in = median over mantissa bits b=0..20 of ( median|d| at b * 2^(23-b) ).
+    """
+    D = {inp: {b: [] for b in BITS} for inp in INPUTS}
+    for r in recs:
+        if r.get("classification") != "SDC":
+            continue
+        b = r.get("bit")
+        if b in ("", None, "None"):
+            continue
+        inp = r.get("input")
+        if inp not in D:
+            continue
+        y = _f(r.get("max_abs_error"))
+        if y > 0:
+            D[inp][int(float(b))].append(y)
+    G = {}
+    for inp in INPUTS:
+        vals = [st.median(D[inp][b]) * 2.0 ** (23 - b)
+                for b in range(0, 21) if D[inp][b]]
+        G[inp] = st.median(vals) if vals else 1.0
+    return G
+
+
+def draw(tag, level, per, sdc, masked, crash, G, outpath, K=10.0):
     rng = random.Random(0)
     ymin, ymax = 1e-8, 1e39
     fig, (ax, axc) = plt.subplots(
@@ -125,14 +155,21 @@ def draw(tag, level, per, sdc, masked, crash, outpath):
                 ys.append(y)
         ax.scatter(xs, ys, s=16, alpha=0.75, color=COLORS[inp],
                    edgecolors="none", label=inp)
-    medx, medy = [], []
-    for b in BITS:
-        vals = [y for inp in INPUTS for y in per[inp][b]]
-        if vals:
-            medx.append(b)
-            medy.append(st.median(vals))
-    ax.plot(medx, medy, color="black", lw=1.6, marker="o", ms=3,
-            label="median (pooled)", zorder=5)
+    ex = {b: [] for b in BITS}
+    co = {b: [] for b in BITS}
+    for inp in INPUTS:
+        g = G.get(inp, 1.0)
+        for b in BITS:
+            for y in per[inp][b]:
+                (ex if y > K * g else co)[b].append(y)
+    exx = [b for b in BITS if ex[b]]
+    exy = [st.median(ex[b]) for b in exx]
+    cox = [b for b in BITS if co[b]]
+    coy = [st.median(co[b]) for b in cox]
+    ax.plot(cox, coy, color="#0b3d91", lw=1.6, ls="--", marker="s", ms=3,
+            label="collapse  |d| <= %g x G" % K, zorder=6)
+    ax.plot(exx, exy, color="#b30000", lw=1.9, marker="o", ms=3.5,
+            label="explode  |d| > %g x G" % K, zorder=7)
     ax.set_yscale("log")
     ax.set_ylim(ymin, ymax)
     ax.set_xlim(-0.7, 31.7)
@@ -184,20 +221,24 @@ def main(argv=None):
 
     if args.samples:
         rows = load(args.samples)
+        G = compute_input_scale(rows)
+        print("input scale G:", {k: round(v, 3) for k, v in G.items()})
         for eid, tag in EXPERIMENTS.items():
             for level in LEVELS:
                 per, sdc, masked, crash = collect_samples(rows, eid, level)
                 out = os.path.join(args.outdir, "bit_diff_%s_%s.svg" % (tag, level))
-                draw(tag, level, per, sdc, masked, crash, out)
+                draw(tag, level, per, sdc, masked, crash, G, out)
                 write_counts(os.path.join(
                     args.outdir, "bit_diff_%s_%s_counts.csv" % (tag, level)),
                     sdc, masked, crash)
     else:
         recs = load(args.master)
+        G = compute_input_scale(recs)
+        print("input scale G:", {k: round(v, 3) for k, v in G.items()})
         for eid, tag in EXPERIMENTS.items():
             per, sdc, masked, crash = collect_master(recs, eid)
             out = os.path.join(args.outdir, "bit_diff_%s.svg" % tag)
-            draw(tag, "L0", per, sdc, masked, crash, out)
+            draw(tag, "L0", per, sdc, masked, crash, G, out)
             write_counts(os.path.join(args.outdir,
                                       "bit_diff_%s_counts.csv" % tag),
                          sdc, masked, crash)

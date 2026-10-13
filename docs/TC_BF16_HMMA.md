@@ -103,9 +103,17 @@ injections are re-classified offline at levels L1..L5 = `(1e-7,1e-6) ..
 
 `scripts/plot_sdc_raw.py` (needs matplotlib; local analysis only) plots **every**
 SDC sample as a point: x = bit 0–31, y = |C'−golden| (log scale), coloured by
-input distribution, with a pooled median line, the exponent region (23–30)
-shaded and a bottom panel of N_sdc / N_masked per bit. One figure per
-(accumulator position × tolerance level):
+input distribution, with the exponent region (23–30) shaded and a bottom panel
+of N_sdc / N_masked per bit. Instead of a pooled median line it overlays **two
+branch-median lines** (one per bit, pooled across inputs), split by the per-input
+output scale `G` (derived from the current samples: `G_in = median|Δ|(mantissa) ·
+2^(23−bit)`):
+
+* **explode** branch (`|Δ| > K·G`, red solid) — exponent bit raised, value blown up;
+* **collapse** branch (`|Δ| ≤ K·G`, blue dashed) — exponent bit lowered, value
+  crushed toward zero.
+
+`K` defaults to 10. One figure per (accumulator position × tolerance level):
 
 ```
 results/_tc_campaign/figs/bit_diff_{early,middle,late}_L{0..5}.svg  (+ _counts.csv)
