@@ -99,6 +99,19 @@ injections are re-classified offline at levels L1..L5 = `(1e-7,1e-6) ..
 (`scripts/tolerance_sweep.py`, `scripts/tolerance_heatmaps.py`); sees
 `results/_tc_tolerance/TOLERANCE_LEVELS.md` and its `figs/` (24 heatmaps).
 
+## Raw SDC magnitude vs bit
+
+`scripts/plot_sdc_raw.py` (needs matplotlib; local analysis only) plots **every**
+SDC sample as a point: x = bit 0–31, y = |C'−golden| (log scale), coloured by
+input distribution, with a pooled median line, the exponent region (23–30)
+shaded and a bottom panel of N_sdc / N_masked per bit. One figure per position:
+
+```
+results/_tc_campaign/figs/bit_diff_early.svg   (+ _counts.csv)
+results/_tc_campaign/figs/bit_diff_middle.svg
+results/_tc_campaign/figs/bit_diff_late.svg
+```
+
 ## Heatmaps
 
 `results/_tc_campaign/figs/` contains `input × bit` SDC-rate heatmaps per
