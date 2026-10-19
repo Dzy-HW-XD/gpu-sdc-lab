@@ -1,0 +1,17 @@
+id: 040_attn_stage_smoke
+kind: attention_stage
+workload: attention_forward
+injector: nvbitfi
+groups: [mma]
+fault_type: bitflip
+stages: [qkv_q, qk, pv]
+heads: [0]
+bits: [23]
+injections_per_cell: 1
+seed: 20261020
+workload_params:
+  S: 64
+  D: 256
+  H: 4
+  dtype: bf16
+  dump: 1

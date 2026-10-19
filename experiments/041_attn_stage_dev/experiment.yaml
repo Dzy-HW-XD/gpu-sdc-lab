@@ -1,0 +1,17 @@
+id: 041_attn_stage_dev
+kind: attention_stage
+workload: attention_forward
+injector: nvbitfi
+groups: [mma]
+fault_type: bitflip
+stages: [qkv_q, qkv_k, qkv_v, qk, pv]
+heads: [0, 2]
+bits: [0, 27, 29]
+injections_per_cell: 1
+seed: 20261021
+workload_params:
+  S: 64
+  D: 256
+  H: 4
+  dtype: bf16
+  dump: 1

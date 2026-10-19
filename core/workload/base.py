@@ -71,6 +71,16 @@ class Workload(object):
             base_env.update(extra_env)
         return util.run_cmd(cmd, cwd=cwd, extra_env=base_env, timeout=timeout)
 
+    def select_kernel(self, prof, case):
+        """Optional: pick a specific kernel launch for a fault case.
+
+        `prof` is the injector profile ({"runs": [...]}); `case` is the built
+        experiment case. Returning None makes the runner use its default
+        (largest / token-matched kernel). Workloads that launch several stages
+        as separate kernels (e.g. attention_forward) override this.
+        """
+        return None
+
     def collect_output(self, out_prefix):
         outputs = []
         for s in self.output_specs:

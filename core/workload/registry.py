@@ -27,11 +27,14 @@ def _bootstrap():
     from core.workload.conv2d import Conv2dWorkload
     from core.workload.softmax import SoftmaxWorkload
     from core.workload.attention import AttentionWorkload
+    from core.workload.attention_forward import AttentionForwardWorkload
     from core.workload.mlp import MLPWorkload
     for name, cls in (("gemm", GEMMWorkload),
                       ("gemm_bf16", GEMMBF16Workload),
                       ("reduce", ReduceWorkload),
                       ("conv2d", Conv2dWorkload), ("softmax", SoftmaxWorkload),
-                      ("attention", AttentionWorkload), ("mlp", MLPWorkload)):
+                      ("attention", AttentionWorkload),
+                      ("attention_forward", AttentionForwardWorkload),
+                      ("mlp", MLPWorkload)):
         if name not in _REGISTRY:
             register_workload(name, cls)

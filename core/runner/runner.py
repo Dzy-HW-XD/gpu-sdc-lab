@@ -239,7 +239,7 @@ class Runner(object):
                 wl = self._workload(case_wl, case["workload_params"])
                 wl_cache[wkey] = (wl, self._golden_for(wl), self._profile_for(wl))
             wl, gbin, prof = wl_cache[wkey]
-            kern = self._main_kernel(prof, wl)
+            kern = wl.select_kernel(prof, case) or self._main_kernel(prof, wl)
             if kern is None:
                 raise RuntimeError("no kernel found in profile")
             count = int(kern["groups"].get(case["group"], 0))

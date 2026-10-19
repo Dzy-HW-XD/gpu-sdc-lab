@@ -251,6 +251,34 @@ def build_cases(expt):
             for _ in range(per):
                 add({"workload": w, "input": fam}, base, ftype, None, (0.0, 1.0))
 
+    elif kind == "attention_stage":
+        # Attention fault campaign: one stage (and, for score/PV, one head) per
+        # case. `groups: [mma]` selects the tensor-core instruction group; the
+        # workload maps (stage, head) -> kernel launch for injection targeting.
+        wl = expt.get("workload", "attention_forward")
+        stages = expt.get("stages", ["qkv_q", "qkv_k", "qkv_v", "qk", "pv"])
+        bits = expt.get("bits", list(range(32)))
+        heads = expt.get("heads")
+        per = int(expt.get("injections_per_cell", 1))
+        base = base_params(expt)
+        H = int(base.get("H", expt.get("num_heads", 1)))
+        for stage in stages:
+            if stage.startswith("qkv") or stage == "wo":
+                stage_heads = [None]
+            else:
+                stage_heads = ([int(h) for h in heads] if heads is not None
+                               else list(range(H)))
+            for h in stage_heads:
+                for bit in bits:
+                    labels = {"stage": stage, "input": "synthetic",
+                              "workload": wl, "bit": int(bit)}
+                    if h is not None:
+                        labels["head"] = int(h)
+                    labels["cell"] = "%s%s|bit%s" % (
+                        stage, "" if h is None else "|h%d" % int(h), bit)
+                    for _ in range(per):
+                        add(labels, dict(base), "bitflip", int(bit), (0.0, 1.0))
+
     else:
         raise ValueError("unknown experiment kind '%s'" % kind)
 

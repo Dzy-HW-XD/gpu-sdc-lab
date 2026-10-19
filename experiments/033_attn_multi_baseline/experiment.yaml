@@ -1,0 +1,11 @@
+id: 033_attn_multi_baseline
+kind: baseline
+workload: attention_forward
+repeats: 3
+workload_params:
+  S: 128
+  D: 2048
+  H: 32
+  dtype: bf16
+  seed: 1234
+  dump: 1
