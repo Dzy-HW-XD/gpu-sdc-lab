@@ -1,0 +1,21 @@
+{
+  "model": "EleutherAI/pythia-410m",
+  "short": "pythia410m",
+  "layers": [
+    0,
+    12,
+    23
+  ],
+  "bits": [
+    28,
+    29,
+    30,
+    31
+  ],
+  "prompts": 24,
+  "max_new_tokens": 48,
+  "clean_repeat": 1,
+  "elapsed_s": 291.916,
+  "torch": "2.14.1+cu126",
+  "cuda": "12.6"
+}

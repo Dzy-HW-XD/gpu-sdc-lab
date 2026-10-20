@@ -1,0 +1,31 @@
+[
+  {"id": "fact_01", "category": "factual", "prompt": "The capital of France is Paris. The capital of Japan is", "expected": ["Tokyo"]},
+  {"id": "fact_02", "category": "factual", "prompt": "The capital of Italy is Rome. The capital of Germany is", "expected": ["Berlin"]},
+  {"id": "fact_03", "category": "factual", "prompt": "The capital of Spain is Madrid. The capital of Portugal is", "expected": ["Lisbon"]},
+  {"id": "fact_04", "category": "factual", "prompt": "The largest planet is Jupiter. The second largest planet is", "expected": ["Saturn"]},
+
+  {"id": "arith_01", "category": "arithmetic", "prompt": "1 + 1 = 2. 2 + 2 = 4. 2 + 3 =", "expected": ["5"]},
+  {"id": "arith_02", "category": "arithmetic", "prompt": "3 + 4 = 7. 4 + 5 = 9. 5 + 6 =", "expected": ["11"]},
+  {"id": "arith_03", "category": "arithmetic", "prompt": "2 * 3 = 6. 3 * 4 = 12. 4 * 5 =", "expected": ["20"]},
+  {"id": "arith_04", "category": "arithmetic", "prompt": "10 - 3 = 7. 10 - 4 = 6. 10 - 5 =", "expected": ["5"]},
+
+  {"id": "list_01", "category": "list", "prompt": "The first three prime numbers are 2, 3, and", "expected": ["5"]},
+  {"id": "list_02", "category": "list", "prompt": "The first three letters are A, B, and", "expected": ["C"]},
+  {"id": "list_03", "category": "list", "prompt": "Count from 1 to 5: 1, 2, 3, 4,", "expected": ["5"]},
+  {"id": "list_04", "category": "list", "prompt": "The first three days are Monday, Tuesday, and", "expected": ["Wednesday"]},
+
+  {"id": "code_01", "category": "code", "prompt": "def add(a, b):\n    return a + b\n\ndef mul(a, b):\n    return", "expected": ["a*b"]},
+  {"id": "code_02", "category": "code", "prompt": "print(2 + 3) outputs 5\nprint(4 + 5) outputs", "expected": ["9"]},
+  {"id": "code_03", "category": "code", "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is", "expected": ["for"]},
+  {"id": "code_04", "category": "code", "prompt": "In Python, 1 == 1 evaluates to", "expected": ["True"]},
+
+  {"id": "def_01", "category": "definition", "prompt": "Hot is the opposite of cold. Up is the opposite of", "expected": ["down"]},
+  {"id": "def_02", "category": "definition", "prompt": "A triangle has three sides. A square has", "expected": ["four"]},
+  {"id": "def_03", "category": "definition", "prompt": "The sun rises in the east. The sun sets in the", "expected": ["west"]},
+  {"id": "def_04", "category": "definition", "prompt": "The sky is blue. Grass is", "expected": ["green"]},
+
+  {"id": "cont_01", "category": "continuation", "prompt": "Roses are red, violets are", "expected": ["blue"]},
+  {"id": "cont_02", "category": "continuation", "prompt": "The quick brown fox jumps over the lazy", "expected": ["dog"]},
+  {"id": "cont_03", "category": "continuation", "prompt": "To be or not to be, that is the", "expected": ["question"]},
+  {"id": "cont_04", "category": "continuation", "prompt": "Twinkle, twinkle, little", "expected": ["star"]}
+]

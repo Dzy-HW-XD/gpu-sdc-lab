@@ -1,0 +1,17 @@
+{
+  "n_rows": 1944,
+  "n_fault": 1440,
+  "n_sham": 360,
+  "n_clean": 120,
+  "n_clean_repeat": 24,
+  "clean_repeat_mismatches": 0,
+  "sham_char_sim_mismatches": 0,
+  "fault_bitdiff_not_one": 0,
+  "outputs": [
+    "runs_pythia160m.csv",
+    "runs_pythia1b.csv",
+    "runs_pythia410m.csv",
+    "runs_qwen05b.csv",
+    "runs_qwen15b.csv"
+  ]
+}

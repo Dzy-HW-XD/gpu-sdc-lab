@@ -270,4 +270,8 @@ Links:
 - [docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md) — Tensor-Core/HMMA campaign
 - [docs/ATTENTION.md](docs/ATTENTION.md) — attention workload and 047 campaign
 - [docs/HEATMAP_REDESIGN.md](docs/HEATMAP_REDESIGN.md) — figure redesign and captions
+- [docs/LLM_SDC_PILOT.md](docs/LLM_SDC_PILOT.md) — LLM SDC pilot and phased plan
+- [docs/LLM_STRUCTURE_INJECTION.md](docs/LLM_STRUCTURE_INJECTION.md) — LLM block structure and injection points
+- [docs/EXPERIMENT_PLAN_HIGHBIT_OUTPUT.md](docs/EXPERIMENT_PLAN_HIGHBIT_OUTPUT.md) — high-bit activation plan
+- [docs/REPORT_HIGHBIT_OUTPUT.md](docs/REPORT_HIGHBIT_OUTPUT.md) — high-bit output-corruption results
 - [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — scalar GEMM archive
