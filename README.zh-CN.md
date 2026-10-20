@@ -1,285 +1,261 @@
 # gpu-sdc-lab
 
-一个长期维护、可渐进扩展的 **GPU 静默数据错误（SDC）实验台**。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-Phase 1 在单张 A100 上打通了一条完整、可复用的链路：
+一个可复现的 **GPU 静默数据错误（SDC）实验台**。仓库分为两层：
+
+- **平台**：workload / injector / observer / oracle / runner 组成的一条可复用流水线，与具体 kernel、注错器和观测方式解耦。
+- **实验**：建立在平台之上的 YAML 配置。主实验集是 **001–019**（FP32 标量 GEMM + 输入敏感性）和 **047**（attention Tensor-Core 实验）。
+
+实验不会 fork 平台代码：每个实验都定义在
+`experiments/<id>/experiment.yaml`，通过同一套 `sdc-lab` / `campaign.py`
+运行。
+
+---
+
+## 平台
+
+### 流水线
 
 ```
-Workload(GEMM) -> Golden 黄金基准 -> 故障注入(NVBitFI) -> 故障运行
-      -> 观测器(输出/运行时/GPU) -> SDC 分类(MASKED/SDC/CRASH)
-      -> results/ (JSONL + CSV)
+Workload -> Golden 基准 -> NVBitFI 注错 -> 故障运行
+      -> 观测器（输出 / 运行时 / GPU） -> SDC 分类
+      -> results/（JSONL + CSV + 图）
 ```
 
-整个框架刻意与 workload、injector、observer 解耦：以后加入新的
-workload、故障模型、观测方法，只需插入同一个 `Runner`，不需要推倒重来。
+设计原则：
 
-## 架构
+- golden 运行逐位可复现，`MASKED` 严格等于“输出逐位一致”；
+- 每次只注入一个故障，作用于一条动态指令的目标寄存器；
+- fault 元数据与 observation 元数据分开保存；
+- 图和统计可从保留的原始输出复现；
+- GPU 端只需要 Python 标准库。
 
-```
-                    SDC LAB
-                       |
-        +--------------+--------------+
-        |              |              |
-     Workload       Injector       Observer
-     (gemm)        (nvbitfi)     output/runtime/gpu
-        |              |              |
-        +--------------+--------------+
-                       |
-                    Oracle (比对 + 分类)
-                       |
-                    results/
-```
+### 目录结构
 
 ```
 core/
-  workload/    Workload 接口 + GEMM + 注册表
-  injection/   FaultInjector 接口 + NVBitFI + 注册表
-  oracle/      输出比对器 + MASKED/SDC/CRASH 分类器
-  observer/    OutputObserver / RuntimeObserver / GPUObserver
-  runner/      编排单个实验
-  experiments.py  各实验种类的用例生成与聚合（含 input_grid）
-  config.py, util.py, yamlmini.py
-workloads/          gemm, reduce, conv2d, softmax, attention, mlp（各含 README）
-fault_models/nvbitfi/  后端说明 + 兼容性补丁
-experiments/     001..019 实验定义
-core/taxonomy.py  指令分类树（故障目标选择）
-core/inputgen.py  输入分布生成器（14 个合成族 + 真实张量）
-core/regclass.py  静态 SASS 寄存器分类（累加器 / 临时）
-scripts/          build.sh, setup_nvbitfi.sh, smoke_workloads.sh,
-                  analyze.py, stats.py, features.py, predictor.py, sampling.py,
-                  campaign.py（批量遍历+汇总）, heatmap.py（纯标准库 SVG 热力图）
-docs/RESEARCH_PLAN.md  论文实验方案
-results/         生成的产物
-scripts/         setup_nvbitfi.sh, build.sh, env.sh
-sdc-lab          CLI 入口
+  workload/       Workload 接口 + 注册表
+  injection/      FaultInjector 接口 + NVBitFI 后端
+  oracle/         输出比对器 + MASKED/SDC/CRASH 分类器
+  observer/       输出 / 运行时 / GPU 观测器
+  runner/         编排单个实验
+  experiments.py  各实验种类的用例生成与聚合
+  taxonomy.py     指令分类树（故障目标选择）
+  inputgen.py     合成输入族 + 真实张量加载
+  regclass.py     静态 SASS 寄存器分类
+workloads/        gemm, gemm_bf16, reduce, conv2d, softmax, attention,
+                  attention_forward, mlp
+fault_models/     NVBitFI 说明 + 兼容性补丁
+experiments/      实验定义（001–047）
+scripts/          构建、批量运行、分析、绘图、容忍度、统计
+docs/             研究方案、workload 与实验文档
+results/          生成的产物
+sdc-lab           CLI 入口
 ```
 
-## 环境（已实测）
+### 工作负载
 
-| 项          | 值                                           |
-|-------------|----------------------------------------------|
-| GPU         | NVIDIA A100-SXM4-80GB (sm_80)，GPU index 1   |
-| Driver      | 580.178.04 (CUDA 13.0)                       |
-| Toolkit     | /usr/local/cuda-13.0 (nvcc 13.0.88)          |
-| NVBit       | v1.8.1                                       |
-| NVBitFI     | NVlabs/nvbitfi（已打补丁，见下）             |
-| Python      | 3.12（仅标准库；不需要 numpy/pandas）        |
+| workload | 计算 | 可注入路径 |
+|---|---|---|
+| `gemm` | FP32 `C=A×B`，确定性 CUDA-Core kernel | FFMA / FADD / FMUL |
+| `gemm_bf16` | BF16×BF16 → FP32，cuBLAS Tensor Core | HMMA 累加器 |
+| `reduce` | block reduction + `atomicAdd` | atomics / FP32 / load |
+| `conv2d` | 直接 2-D 卷积 | FP32 / load |
+| `softmax` | 行级 softmax | FP32 / MUFU / load |
+| `attention` | 显式 FP32 单头 attention | FP32 / load / MUFU |
+| `attention_forward` | BF16 causal 多头 attention，五个 GEMM | HMMA 累加器 |
+| `mlp` | 2 层前向 + 一步反向 | FP32 / load / MUFU |
 
-## 安装 / 构建
+所有 workload 都是确定性的。`mlp` 输出 6 个具名张量，用于逐层传播研究。
+
+### 故障模型与目标
+
+一次故障 = 某个 kernel 调用中，某条动态线程指令的目标寄存器。故障类型：
+`bitflip`、`twobit`、`random`、`zero`。
+
+目标从指令分类树中选择：`arithmetic`（fp32、ffma、fadd、fmul、fp16、int、mma）、`memory`（load、atomic）、`control`（predicate）、`meta`（gpr、gp）。NVBitFI 的 `mma` 组已修补，以正确处理 HMMA.16816 的 4 个 FP32 目标寄存器。详见
+[docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md)。
+
+### 输入
+
+`core/inputgen.py` 提供确定性输入族：`uniform`、`normal`、`lognormal`、
+`sparse`、`cancellation`、`near_overflow`、`correlated`、`adversarial`、
+`ones`、`near_zero`、`near_one`、`extreme`、`small`、`large`，以及面向
+LLM 激活的 `heavy_tail_act`、`residual_stream`、`swiglu_gated` 和 `real`
+（从磁盘加载张量）。输入可按 FP32 或 BF16 物化。详见
+[docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md)。
+
+### 分析工具
+
+- `scripts/campaign.py`：批量运行/汇总，把每个实验的 `observations.jsonl` 合并为 master/cells CSV，并计算 Wilson 区间。
+- `scripts/heatmap.py`：纯标准库 SVG 热力图 + 透视表 CSV。
+- `scripts/tolerance_sweep.py`：对保留的原始输出按 L1–L5 重新分类。
+- `scripts/stats.py`：Wilson CI、McNemar、双比例 z、Holm。
+- `scripts/features.py`：可解释的输入特征。
+- `scripts/predictor.py`、`scripts/sampling.py`：输入感知风险模型与采样。
+- `scripts/analyze.py`：单实验汇总。
+
+### 环境（已实测）
+
+| 项 | 值 |
+|---|---|
+| GPU | NVIDIA A100-SXM4-80GB (sm_80) |
+| Driver | 580.178.04 (CUDA 13.0) |
+| Toolkit | `/usr/local/cuda-13.0`（nvcc 13.0.88） |
+| NVBit | v1.8.1 |
+| NVBitFI | NVlabs/nvbitfi（已打补丁） |
+| Python | 3.12；GPU 节点上仅用标准库 |
+
+### 构建与运行
 
 ```bash
-# 1. 拉取 + 打补丁 + 编译 NVBit 与 NVBitFI（不改动系统环境）
-./scripts/setup_nvbitfi.sh
+./scripts/setup_nvbitfi.sh     # 拉取 + 打补丁 + 编译 NVBit/NVBitFI
+./scripts/build.sh             # 编译 workloads
+./sdc-lab doctor               # 环境 / GPU / 工具自检
 
-# 2. 编译 GEMM workload
-./scripts/build.sh
-
-# 3. 自检
-./sdc-lab doctor
-```
-
-**可任意路径执行（可移植）。** 工程内没有任何硬编码路径：所有路径都在运行时
-从工程根目录推导（`realpath`），因此可以放在任意目录、从任意当前目录调用，
-甚至通过软链接调用。CUDA 工具链自动探测（`$CUDA_HOME` -> `PATH` 上的 `nvcc`
--> `/usr/local/cuda*`）；也可用 `CUDA_HOME=...` 或 `config.yaml` 里的
-`cuda_home:` 覆盖。`results/` 与 `third_party/` 都相对于工程根目录。
-
-## 使用
-
-```bash
-# 环境 / GPU / 工具自检
-./sdc-lab doctor
-./sdc-lab profile --M 1024 --N 1024 --K 1024
-
-# 基线确定性（连续 10 次，不注错）
 ./sdc-lab baseline --experiment 001_gemm_baseline
-
-# 故障注入实验
-./sdc-lab run --experiment 002_fault_position
-./sdc-lab run --experiment 003_fault_type
-./sdc-lab run --experiment 004_fault_bit
-./sdc-lab run --experiment 005_gemm_size
-./sdc-lab run --experiment 006_data_pattern
-./sdc-lab run --experiment 007_reduce_atomic
-
-# 输入相关性实验（input × bit / 指令 / 规模 / 时机）
-./sdc-lab run --experiment 008_input_sensitivity_gemm
-./sdc-lab run --experiment 015_input_bit_gemm
-./sdc-lab run --experiment 016_input_instruction_gemm
-
-# 批量活动：运行 + 汇总 + 热力图（见下节）
-python3 scripts/campaign.py run 015_input_bit_gemm
-python3 scripts/campaign.py collect 015_input_bit_gemm
-python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
-
-# 临时实验：100 次 bitflip，混合目标
-./sdc-lab run --workload gemm --injector nvbitfi \
-    --fault-type bitflip --num-injections 100
-
-# 查看指令分类树
-./sdc-lab taxonomy
+./sdc-lab run      --experiment 002_fault_position
+./sdc-lab run      --experiment 047_attn_5gemm_full
 ```
 
-常用覆盖参数：`--groups memory/atomic,arithmetic/fp32,memory/load,meta/gp`、
-`--group fp32`、`--num-injections N`、`--positions`、`--bits`、
-`--M/--N/--K`、`--gpu`、`--seed`、`--id`。
+`run` 会输出 total / masked / SDC / crash / not-injected 计数和 SDC rate。
+常用覆盖参数：`--groups`、`--positions`、`--bits`、`--M/--N/--K`、`--gpu`、
+`--seed`、`--num-injections`。
 
-`run` 输出示例：
-
-```
-Total   : 100
-Masked  : 6
-SDC     : 82
-Crash   : 12
-NotInj  : 0
-SDC rate: 0.8200
-```
-
-## 结果目录结构
+### 结果目录
 
 ```
-results/002_fault_position/
+results/<experiment>/
   config.yaml                 # 实验定义
-  experiment.json             # 计数 + 按维度的聚合
+  experiment.json             # 计数 + 聚合
   observations.jsonl          # 每次注错一行 JSON
   summary.csv                 # 总体计数
-  fault_position_summary.csv  # position,total,masked,sdc,crash,sdc_rate
-  report.md
-  raw/0001_fp32/              # injection-info, injection-log, out.bin/json,
-                              # stdout, stderr, result.json
+  <axis>_summary.csv          # 按维度的拆分
+  report.md                   # 人类可读报告（部分实验有）
+  raw/                        # 每次注错的原始输出（较大，归档）
 ```
 
 `observations.jsonl` 把 **fault 元数据** 与 **observation 元数据** 分开保存，
-因此可以直接用 `pandas.read_json(..., lines=True)` 做
-"故障位置 -> SDC 概率 -> 可观测特征" 的研究。
+因此可以直接做“故障点 → SDC 概率 → 可观测特征”的研究。大文件（`*.bin`）
+和 raw archive 默认不进 git。
 
-## 故障模型（NVBitFI）
+### SDC 分类
 
-一次故障 = 某个 kernel 调用中，某条动态线程指令的目标寄存器。定位方式为
-`(kernel, 调用序号, 指令组, 组内动态指令 id)` 加上 `(bit-flip 模型, bit id seed)`。
-故障类型：`bitflip`、`twobit`、`random`、`zero`。
-详见 `fault_models/nvbitfi/README.md`。
+| 分类 | 条件 |
+|---|---|
+| `CRASH` | 超时、非零退出码、CUDA 错误 / 非法访存 |
+| `MASKED` | 正常结束，且输出与 golden 逐位一致 |
+| `SDC` | 正常结束，但输出与 golden 不同（NaN/Inf 额外标记） |
+| `NOT_INJECTED` | 故障点从未执行到（仅记账） |
 
-## 故障目标（分类树）
+阈值来自 `oracle.abs_tol/rel_tol`；由于 golden 逐位可复现，默认精确比较。
 
-目标从一棵小型指令树（`core/taxonomy.py`）中选择；每个叶子映射到一个
-NVBitFI 组，并可选带 opcode 白名单：
-
-```
-arithmetic: fp64, fp32, ffma*, fadd*, fmul*, fp16*, int*, mma*
-            (* 按 opcode 过滤：ffma/fadd/fmul 过滤 fp32 桶，其余过滤 others 桶)
-memory:     load, atomic, store(不可注)
-control:    predicate, nodest(不可注)
-meta:       gppr, gp, other
-```
-
-`./sdc-lab taxonomy` 可打印该树。选择支持叶子名（`--group atomic`）、路径
-（`--group memory/atomic`）或整棵子树（`--group arithmetic`）。`memory/atomic`
-使用由 `scripts/patch_nvbitfi.py` 新增的专用 NVBitFI 组 `atom`；标了
-opcode-filtered 的叶子在共享的 `others` 桶里采样，只有命中的 opcode 属于白名单
-才计入统计，否则记为 `NOT_TARGETED`。
-
-## 工作负载与输入
-
-六个确定性 workload：`gemm / reduce / conv2d / softmax / attention / mlp`
-（mlp 为“前向+一步反向”的小型训练步，输出 6 个具名张量，用于研究误差**逐层传播**）。
-
-输入生成器（`core/inputgen.py`）：`uniform / normal / lognormal / sparse /
-cancellation / near_overflow / correlated / adversarial / ones / near_zero /
-near_one / extreme / small / large` + `real`。带 `input_spec` 的实验会把输入
-物化到 `results/_inputs/` 并传给 kernel。`./sdc-lab gen-input` 可直接生成。
-`scripts/features.py` 提取可解释的输入特征（动态范围、峰度、离群/非负比例、
-抵消、指数统计等）。每种输入分布的含义与示例见
-[docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md)。
-
-**当前方向（Tensor Core）**：新增 `gemm_bf16`（BF16×BF16 → FP32，cuBLAS
-Tensor Core / HMMA），面向 HMMA 的 FP32 累加器注错；新增面向 LLM 激活的输入族
-`heavy_tail_act / residual_stream / swiglu_gated`（BF16 物化）。详见
-[docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md)；旧的 FP32 标量 GEMM 实验（015–019）
-已归档，见 [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md)。
-
-## 输入相关性批量实验（015–019）
-
-`kind: input_grid` 在固定其它变量的前提下，遍历“输入分布 × 单个第二变量”
-（配对设计），cell 命名为 `input|<值>`：
-
-| 实验 | 第二变量 | 说明 |
-|---|---|---|
-| `015_input_bit_gemm` | FP32 bit 0–31 | 核心 input × bit 热力图 |
-| `016_input_instruction_gemm` | FFMA / FADD / FMUL | 按 opcode 过滤；FADD/FMUL 用 `--op-mode muladd` |
-| `017_input_size_gemm` | 128/512/1024 | |
-| `018_input_position_gemm` | early / middle / late | |
-| `019_register_class_gemm` | 累加器 / 临时寄存器 | 静态 SASS 分类，见 `core/regclass.py` |
-
-批量运行 + 汇总 + 绘图：
-
-```bash
-python3 scripts/campaign.py run 015_input_bit_gemm 016_input_instruction_gemm
-python3 scripts/campaign.py collect 015_input_bit_gemm 016_input_instruction_gemm
-python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
-# 大动态范围指标：对数色标 + 每格标注数值
-python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit \
-    --metric mean_abs_err --log-color --annotate
-python3 scripts/stats.py --cells results/_campaign/cells.csv uniform bit
-```
-
-`campaign.py` 把每个实验的 `observations.jsonl` 合并为
-`results/_campaign/master.csv` 与 `results/_campaign/cells.csv`（按维度给出
-Wilson 置信区间）；`heatmap.py` 用纯标准库渲染 SVG 热力图并导出透视表 CSV。
-
-**容忍度敏感性（离线、与注入解耦）**：`scripts/tolerance_sweep.py` 对同一批
-样本按 L1..L5 = `(1e-7,1e-6) .. (1e-3,1e-2)`（同步 ×10）重算分类，
-`scripts/tolerance_heatmaps.py` 为每档输出一张 input × bit 热力图；说明见
-`results/_tolerance/TOLERANCE_LEVELS.md`。
-
-```bash
-python3 scripts/tolerance_sweep.py 015_input_bit_gemm 016_input_instruction_gemm \
-    017_input_size_gemm 018_input_position_gemm 019_register_class_gemm \
-    --out results/_tolerance
-python3 scripts/tolerance_heatmaps.py \
-    --cells results/_tolerance/tolerance_by_cell.csv \
-    --experiment 015_input_bit_gemm --outdir results/_tolerance/figs
-```
-
-## 指令类型 / 寄存器类型
-
-NVBitFI 的 `fp32` 是一个整组；`core/taxonomy.py` 为它增加了按 opcode 过滤的
-视图（`arithmetic/ffma`、`arithmetic/fadd`、`arithmetic/fmul`），只有命中白名单
-opcode 才计入。GEMM 内层循环几乎全是 FFMA，因此 `gemm` 支持 `--op-mode muladd`
-强制使用 `__fmul_rn`/`__fadd_rn`（仍然确定性），在同一 kernel 内造出 FADD/FMUL；
-默认 `--op-mode fma` 与原始 GEMM 逐位一致。
-
-`core/regclass.py` 用 `cuobjdump -sass`（缓存于 `results/_sass/`）把每条 FP32
-指令的目标寄存器标为 `accumulator`（目标同时是操作数，即原地累加）或
-`temporary`；runner 会在每条记录写入 `fault.register_class` 并输出
-`register_class_summary.csv`。这是静态、启发式的分类。
-
-## SDC 分类
-
-| 分类         | 条件 |
-|--------------|------|
-| CRASH        | 超时、非零退出码、CUDA 错误 / 非法访存 / 地址未对齐 |
-| MASKED       | 正常运行结束，且输出与黄金基准逐位一致 |
-| SDC          | 正常运行结束，但输出与黄金基准不同（NaN/Inf 会额外标记） |
-| NOT_INJECTED | 故障点从未执行到（仅用于记账） |
-
-阈值来自 `oracle.abs_tol/rel_tol`，默认精确比较——因为 GEMM 黄金基准
-逐位可复现（已在实验 001 验证）。
-
-## 扩展接口
+### 扩展
 
 - **Workload**：实现 `core/workload/base.py` 并注册。
-- **Injector**：实现 `core/injection/base.py`（如软件注错器）并注册；
-  runner 从不直接依赖 NVBitFI。
-- **Observer**：在 `core/observer/` 增加 `Observer`（激活/梯度/损失/权重/DCGM），
-  runner 会自动聚合。
+- **Injector**：实现 `core/injection/base.py` 并注册。
+- **Observer**：在 `core/observer/` 增加观测器。
 - **Oracle / 实验种类**：在 `core/experiments.py` 增加构建器。
 
-## 兼容性说明（A100 + CUDA 13.0）
+### 兼容性（A100 + CUDA 13.0）
 
-NVBitFI（2020 年的工具）需要两处源码补丁，已由 `scripts/setup_nvbitfi.sh`
-自动应用；**未改动系统驱动/CUDA**：
+NVBitFI（2020 年的工具）需要两处源码补丁，由
+`scripts/setup_nvbitfi.sh` 自动应用：`ballot()` →
+`__activemask()`/`__ballot_sync`；移除 device 端
+`printf()/assert()`（仅 CUDA ≥ 13.1 支持）。不需要改动系统驱动。
 
-1. profiler：`ballot()` -> `__activemask()` / `__ballot_sync`（sm_70+ 已移除）。
-2. injector：编译时剥离 device 端 `printf()/assert()`（它们要求 CUDA >= 13.1，
-   否则会触发 `CUDA_ERROR_INVALID_SOURCE`）。
+---
+
+## 实验
+
+下面所有实验都是平台上的配置。**主实验集**是 001–019 和 047；
+020–023、030–040 是开发/辅助运行，放在最后。
+
+### 001–007：平台打通与 FP32 GEMM 基础
+
+| ID | 问题 | 成果 |
+|---|---|---|
+| [001_gemm_baseline](experiments/001_gemm_baseline/experiment.yaml) | golden GEMM 是否逐位可复现？ | [报告](results/001_gemm_baseline/report.md) |
+| [002_fault_position](experiments/002_fault_position/experiment.yaml) | 指令位置 early/middle/late 如何影响 SDC？ | [报告](results/002_fault_position/report.md) |
+| [003_fault_type](experiments/003_fault_type/experiment.yaml) | bitflip / twobit / random / zero 的差异？ | [报告](results/003_fault_type/report.md) |
+| [004_fault_bit](experiments/004_fault_bit/experiment.yaml) | 符号位 / 指数位 / 尾数位哪个最危险？ | [报告](results/004_fault_bit/report.md) |
+| [005_gemm_size](experiments/005_gemm_size/experiment.yaml) | GEMM 规模是否改变 SDC 概率？ | [报告](results/005_gemm_size/report.md) |
+| [006_data_pattern](experiments/006_data_pattern/experiment.yaml) | 输入数据模式是否影响 SDC？ | [报告](results/006_data_pattern/report.md) |
+| [007_reduce_atomic](experiments/007_reduce_atomic/experiment.yaml) | atomics 与 FP32/load/global 注错有何不同？ | [报告](results/007_reduce_atomic/report.md) |
+
+组级汇总：[results/SDCLAB_SUMMARY.md](results/SDCLAB_SUMMARY.md)。
+
+### 008–014：跨 workload 的输入敏感性
+
+这组实验采用配对设计：固定故障点，只改变输入分布，用来建立“输入依赖
+SDC”的方向。论文中的输入敏感性分析来自这组实验；当前 check-out 没有为
+每个实验单独保留结果目录。
+
+| ID | 问题 | 链接 |
+|---|---|---|
+| [008_input_sensitivity_gemm](experiments/008_input_sensitivity_gemm/experiment.yaml) | GEMM 的输入族敏感性 | [方案](docs/RESEARCH_PLAN.md)、[摘要](PAPER_ABSTRACT.md) |
+| [009_input_sensitivity_reduce](experiments/009_input_sensitivity_reduce/experiment.yaml) | reduce / atomics 的输入敏感性 | [方案](docs/RESEARCH_PLAN.md) |
+| [010_input_sensitivity_softmax](experiments/010_input_sensitivity_softmax/experiment.yaml) | softmax 的输入敏感性 | [方案](docs/RESEARCH_PLAN.md) |
+| [011_input_sensitivity_conv2d](experiments/011_input_sensitivity_conv2d/experiment.yaml) | 2-D 卷积的输入敏感性 | [方案](docs/RESEARCH_PLAN.md) |
+| [012_input_sensitivity_attention](experiments/012_input_sensitivity_attention/experiment.yaml) | 显式 attention 的输入敏感性 | [方案](docs/RESEARCH_PLAN.md) |
+| [013_input_sensitivity_mlp](experiments/013_input_sensitivity_mlp/experiment.yaml) | MLP 输入敏感性与逐层传播 | [方案](docs/RESEARCH_PLAN.md) |
+| [014_cross_workload](experiments/014_cross_workload/experiment.yaml) | 跨 workload 对比 | [方案](docs/RESEARCH_PLAN.md) |
+
+### 015–019：输入 × 变量批量实验（FP32 标量 GEMM）
+
+`kind: input_grid` 在固定其它变量的前提下，遍历“输入分布 × 单个第二变量”。
+这是 FP32 标量 CUDA-Core GEMM 阶段，已归档；见
+[docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md)。
+
+| ID | 第二变量 | 成果 |
+|---|---|---|
+| [015_input_bit_gemm](experiments/015_input_bit_gemm/experiment.yaml) | FP32 bit 0–31 | [结果](results/015_input_bit_gemm/) |
+| [016_input_instruction_gemm](experiments/016_input_instruction_gemm/experiment.yaml) | FFMA / FADD / FMUL | [结果](results/016_input_instruction_gemm/) |
+| [017_input_size_gemm](experiments/017_input_size_gemm/experiment.yaml) | 128 / 512 / 1024 | [结果](results/017_input_size_gemm/) |
+| [018_input_position_gemm](experiments/018_input_position_gemm/experiment.yaml) | early / middle / late | [结果](results/018_input_position_gemm/) |
+| [019_register_class_gemm](experiments/019_register_class_gemm/experiment.yaml) | accumulator / temporary | [结果](results/019_register_class_gemm/) |
+
+组级链接：
+[per-cell 汇总](results/_campaign/CAMPAIGN_SUMMARY.md)、
+[L1–L5 容忍度](results/_tolerance/TOLERANCE_LEVELS.md)。
+
+### 047：attention 五 GEMM 实验
+
+`047_attn_5gemm_full` 在 BF16 causal attention forward（`S=128, D=2048,
+H=32`）的 HMMA 累加器上注入单个 bit flip。覆盖五个 GEMM 阶段
+（`qkv_q`、`qkv_k`、`qkv_v`、`qk`、`pv`）、bit 24–30、early/middle/late
+位置，每个 cell 30 次注入，共 3150 次。判据为 L4
+（`|ΔY| > 1e-4 + 1e-3|Y|`）。
+
+主要结果：**1507/3150 SDC（47.8%）**。QKV-Q、QK、PV 严格单 token；
+QKV-K 影响范围宽（中位 20 个 token 行）；QKV-V 介于两者之间。bit 30 有
+55 次运行产生 NaN/Inf，已单独处理。
+
+链接：
+[实验产物](results/047_attn_5gemm_full/)、
+[图说明](results/047_attn_5gemm_full/final_heatmaps_v2/README.md)、
+[单/多 token 总结图](results/047_attn_5gemm_full/final_heatmaps_v2/summary/token_count_distribution.png)、
+[golden 数值差距图](results/047_attn_5gemm_full/final_heatmaps_v2/summary/golden_vs_delta_hexbin.png)、
+[attention 设计](docs/ATTENTION.md)、
+[热图重绘说明](docs/HEATMAP_REDESIGN.md)。
+
+### 辅助 / 开发实验
+
+| ID | 用途 | 链接 |
+|---|---|---|
+| 020–023 | BF16 Tensor-Core 输入 × bit/size（early/middle/late） | [TC 汇总](results/_tc_campaign/TC_SUMMARY.md)、[容忍度](results/_tc_tolerance/TOLERANCE_LEVELS.md)、[文档](docs/TC_BF16_HMMA.md) |
+| 030–033 | attention 开发/目标规模基线 | [attention 文档](docs/ATTENTION.md)、[配置](experiments/030_attn_single_dev_baseline/experiment.yaml) |
+| 040 | attention stage smoke test | [attention 文档](docs/ATTENTION.md)、[配置](experiments/040_attn_stage_smoke/experiment.yaml) |
+
+---
+
+## 文档索引
+
+- [PAPER_ABSTRACT.md](PAPER_ABSTRACT.md) — 论文摘要（中英文）
+- [docs/RESEARCH_PLAN.md](docs/RESEARCH_PLAN.md) — 实验方案
+- [docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md) — 输入族说明
+- [docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md) — Tensor-Core/HMMA 实验
+- [docs/ATTENTION.md](docs/ATTENTION.md) — attention workload 与 047
+- [docs/HEATMAP_REDESIGN.md](docs/HEATMAP_REDESIGN.md) — 热图重绘与 caption
+- [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — FP32 标量 GEMM 归档

@@ -2,318 +2,272 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A long-lived, extensible **GPU Silent Data Corruption (SDC) lab**.
+A reproducible **GPU Silent Data Corruption (SDC) laboratory**. The repository
+has two layers:
 
-Phase 1 establishes one complete, reusable chain on a single A100:
+- **Platform** — a reusable workload / injector / observer / oracle / runner
+  pipeline. It is workload-, injector- and observer-agnostic.
+- **Experiments** — YAML configurations built on the platform. The main
+  experiment set is **001–019** (scalar FP32 GEMM + input-sensitivity studies)
+  and **047** (attention Tensor-Core campaign).
+
+No experiment forks the platform: every experiment is defined in
+`experiments/<id>/experiment.yaml` and runs through the same `sdc-lab` /
+`campaign.py` path.
+
+---
+
+## Platform
+
+### Pipeline
 
 ```
-Workload(GEMM) -> Golden oracle -> Fault injection(NVBitFI) -> Faulty run
-      -> Observers(Output/Runtime/GPU) -> SDC classification(MASKED/SDC/CRASH)
-      -> results/ (JSONL + CSV)
+Workload -> Golden oracle -> NVBitFI injection -> Faulty run
+      -> Observers (output / runtime / GPU) -> SDC classification
+      -> results/ (JSONL + CSV + figures)
 ```
 
-The framework is deliberately workload-, injector- and observer-agnostic:
-new workloads, fault models and observation methods plug into the same
-`Runner` without rewriting the platform.
+Design principles:
 
-## Architecture
+- deterministic golden runs, so `MASKED` means bitwise identical;
+- one fault per run, injected into one dynamic instruction destination register;
+- fault metadata and observation metadata stored separately;
+- figures and analysis are reproducible from the preserved raw outputs;
+- the GPU-side tooling needs only Python's standard library.
 
-```
-                    SDC LAB
-                       |
-        +--------------+--------------+
-        |              |              |
-     Workload       Injector       Observer
-     (gemm)        (nvbitfi)     output/runtime/gpu
-        |              |              |
-        +--------------+--------------+
-                       |
-                    Oracle (compare + classify)
-                       |
-                    results/
-```
+### Repository layout
 
 ```
 core/
-  workload/    Workload interface + GEMM + registry
-  injection/   FaultInjector interface + NVBitFI + registry
-  oracle/      output comparator + MASKED/SDC/CRASH classifier
-  observer/    OutputObserver / RuntimeObserver / GPUObserver
-  runner/      orchestrates one experiment
-  experiments.py  case generation + aggregation per experiment kind
-  config.py, util.py, yamlmini.py
-workloads/          gemm, reduce, conv2d, softmax, attention, mlp  (+README each)
-fault_models/nvbitfi/  backend notes + compatibility patches
-experiments/     001..014 experiment definitions
-core/taxonomy.py  instruction taxonomy tree (fault-target selection)
-core/inputgen.py  input-distribution generators (8 synthetic families + real)
-scripts/          build.sh, setup_nvbitfi.sh, smoke_workloads.sh,
-                  analyze.py, stats.py, features.py, predictor.py, sampling.py
-docs/RESEARCH_PLAN.md  experiment program (for the paper)
-results/         generated artifacts
-scripts/         setup_nvbitfi.sh, build.sh, env.sh
-sdc-lab          CLI entrypoint
+  workload/       Workload interface + registry
+  injection/      FaultInjector interface + NVBitFI backend
+  oracle/         Output comparator + MASKED/SDC/CRASH classifier
+  observer/       Output / Runtime / GPU observers
+  runner/         Orchestrates one experiment
+  experiments.py  Case generation + aggregation per experiment kind
+  taxonomy.py     Instruction taxonomy (fault-target selection)
+  inputgen.py     Synthetic input families + real-tensor loader
+  regclass.py     Static SASS register classification
+workloads/        gemm, gemm_bf16, reduce, conv2d, softmax, attention,
+                  attention_forward, mlp
+fault_models/     NVBitFI notes + compatibility patches
+experiments/      Experiment definitions (001–047)
+scripts/          Build, campaign, analysis, plotting, tolerance, statistics
+docs/             Research plan, workload and experiment documentation
+results/          Generated artifacts
+sdc-lab           CLI entrypoint
 ```
 
-## Environment (validated)
+### Workloads
 
-| item        | value                                        |
-|-------------|----------------------------------------------|
-| GPU         | NVIDIA A100-SXM4-80GB (sm_80), GPU index 1   |
-| Driver      | 580.178.04 (CUDA 13.0)                       |
-| Toolkit     | /usr/local/cuda-13.0 (nvcc 13.0.88)          |
-| NVBit       | v1.8.1                                       |
-| NVBitFI     | NVlabs/nvbitfi (patched, see below)          |
-| Python      | 3.12 (stdlib only; no numpy/pandas required) |
+| workload | computation | injectable path |
+|---|---|---|
+| `gemm` | FP32 `C=A×B`, deterministic CUDA-Core kernel | FFMA / FADD / FMUL |
+| `gemm_bf16` | BF16×BF16 → FP32, cuBLAS Tensor Core | HMMA accumulator |
+| `reduce` | block reduction + `atomicAdd` | atomics / FP32 / loads |
+| `conv2d` | direct 2-D convolution | FP32 / loads |
+| `softmax` | row-wise softmax | FP32 / MUFU / loads |
+| `attention` | explicit FP32 single-head attention | FP32 / loads / MUFU |
+| `attention_forward` | BF16 causal multi-head attention, five GEMMs | HMMA accumulator |
+| `mlp` | 2-layer forward + one backward step | FP32 / loads / MUFU |
 
-## Install / build
+All workloads are deterministic. `mlp` emits six named tensors for per-layer
+propagation studies.
+
+### Fault model and targets
+
+One fault = one dynamic thread-instruction destination register in one kernel
+invocation. Fault types: `bitflip`, `twobit`, `random`, `zero`.
+
+Targets are selected from an instruction taxonomy: `arithmetic` (fp32, ffma,
+fadd, fmul, fp16, int, mma), `memory` (load, atomic), `control` (predicate)
+and `meta` (gpr, gp). NVBitFI's `mma` group is patched to handle the four
+FP32 destination registers of HMMA.16816. See
+[docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md).
+
+### Inputs
+
+`core/inputgen.py` provides deterministic input families: `uniform`, `normal`,
+`lognormal`, `sparse`, `cancellation`, `near_overflow`, `correlated`,
+`adversarial`, `ones`, `near_zero`, `near_one`, `extreme`, `small`, `large`,
+plus LLM-activation-oriented `heavy_tail_act`, `residual_stream`,
+`swiglu_gated`, and `real` (load a tensor from disk). Inputs can be materialised
+as FP32 or BF16. See [docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md).
+
+### Analysis tools
+
+- `scripts/campaign.py` — run/collect a campaign, merge `observations.jsonl`,
+  compute per-cell Wilson intervals.
+- `scripts/heatmap.py` — stdlib SVG heatmaps and pivot CSVs.
+- `scripts/tolerance_sweep.py` — re-classify preserved outputs at L1–L5.
+- `scripts/stats.py` — Wilson CI, McNemar, two-proportion z, Holm.
+- `scripts/features.py` — interpretable input features.
+- `scripts/predictor.py`, `scripts/sampling.py` — input-aware risk model and
+  sampling.
+- `scripts/analyze.py` — per-experiment summary.
+
+### Environment (validated)
+
+| item | value |
+|---|---|
+| GPU | NVIDIA A100-SXM4-80GB (sm_80) |
+| Driver | 580.178.04 (CUDA 13.0) |
+| Toolkit | `/usr/local/cuda-13.0` (nvcc 13.0.88) |
+| NVBit | v1.8.1 |
+| NVBitFI | NVlabs/nvbitfi (patched) |
+| Python | 3.12, standard library only on the GPU node |
+
+### Build and run
 
 ```bash
-# 1. fetch + patch + build NVBit and NVBitFI (no system changes)
-./scripts/setup_nvbitfi.sh
+./scripts/setup_nvbitfi.sh     # fetch + patch + build NVBit/NVBitFI
+./scripts/build.sh             # build workloads
+./sdc-lab doctor               # environment / GPU / tool check
 
-# 2. build the GEMM workload
-./scripts/build.sh
-
-# 3. sanity check
-./sdc-lab doctor
-```
-
-**Portable / relocatable.** The project contains no hardcoded paths: all paths
-are derived from the project root at runtime (`realpath`), so it can live in any
-directory and be invoked from any current directory or through a symlink. The
-CUDA toolkit is auto-detected (`$CUDA_HOME` -> `nvcc` on `PATH` ->
-`/usr/local/cuda*`); override with `CUDA_HOME=...` or `cuda_home:` in
-`config.yaml`. `results/` and the `third_party/` build are relative to the root.
-
-## Usage
-
-```bash
-# environment / GPU / tool presence
-./sdc-lab doctor
-./sdc-lab profile --M 1024 --N 1024 --K 1024
-
-# baseline determinism (10x, no injection)
 ./sdc-lab baseline --experiment 001_gemm_baseline
-
-# fault injection campaigns
-./sdc-lab run --experiment 002_fault_position
-./sdc-lab run --experiment 003_fault_type
-./sdc-lab run --experiment 004_fault_bit
-./sdc-lab run --experiment 005_gemm_size
-./sdc-lab run --experiment 006_data_pattern
-./sdc-lab run --experiment 007_reduce_atomic
-
-# ad-hoc: 100 bit-flip injections, mixed targets
-./sdc-lab run --workload gemm --injector nvbitfi \
-    --fault-type bitflip --num-injections 100
-
-# instruction taxonomy / workloads / input generators
-./sdc-lab taxonomy
-./sdc-lab list
-./sdc-lab gen-input --gen cancellation --n 1048576 --seed 5 --out /tmp/x.bin
-
-# input-sensitivity experiments (input/workload dependence)
-./sdc-lab run --experiment 008_input_sensitivity_gemm
-./sdc-lab run --experiment 014_cross_workload
+./sdc-lab run      --experiment 002_fault_position
+./sdc-lab run      --experiment 047_attn_5gemm_full
 ```
 
-Useful overrides: `--groups memory/atomic,arithmetic/fp32,memory/load,meta/gp`,
-`--group fp32`, `--num-injections N`, `--positions`, `--bits`, `--M/--N/--K`,
-`--gpu`, `--seed`, `--id`.
+`run` prints total / masked / SDC / crash / not-injected counts and the SDC
+rate. Useful overrides: `--groups`, `--positions`, `--bits`, `--M/--N/--K`,
+`--gpu`, `--seed`, `--num-injections`.
 
-`run` prints:
-
-```
-Total   : 100
-Masked  : 6
-SDC     : 82
-Crash   : 12
-NotInj  : 0
-SDC rate: 0.8200
-```
-
-## Results layout
+### Results layout
 
 ```
-results/002_fault_position/
+results/<experiment>/
   config.yaml                 # experiment definition
-  experiment.json             # counts + per-dimension aggregation
-  observations.jsonl          # one JSON object per injection
+  experiment.json             # counts + aggregation
+  observations.jsonl          # one JSON record per injection
   summary.csv                 # overall counts
-  fault_position_summary.csv  # position,total,masked,sdc,crash,sdc_rate
-  report.md
-  raw/0001_fp32/              # injection-info, injection-log, out.bin/json,
-                              # stdout, stderr, result.json
+  <axis>_summary.csv          # per-axis breakdown
+  report.md                   # human-readable report (where generated)
+  raw/                        # per-injection outputs (large; archive)
 ```
 
 `observations.jsonl` keeps **fault metadata** and **observation metadata**
-separate, so fault-position -> SDC-probability -> observable-signature studies
-can be done directly with e.g. `pandas.read_json(..., lines=True)`.
+separate, so fault-site → SDC-probability → observable-signature studies can be
+done directly. Large binaries (`*.bin`) and raw archives are intentionally not
+tracked.
 
-## Fault model (NVBitFI)
+### SDC classification
 
-One fault = one dynamic thread-instruction destination register in one kernel
-invocation, selected by `(kernel, invocation, instruction-group, dynamic
-inst id)` plus `(bit-flip model, bit id seed)`. Fault types: `bitflip`,
-`twobit`, `random`, `zero`. See `fault_models/nvbitfi/README.md`.
+| class | condition |
+|---|---|
+| `CRASH` | timeout, non-zero exit, CUDA error / illegal access |
+| `MASKED` | completes and output is bit-identical to golden |
+| `SDC` | completes and output differs from golden (NaN/Inf flagged) |
+| `NOT_INJECTED` | fault site never executed (bookkeeping only) |
 
-## Fault targets (taxonomy tree)
+Thresholds come from `oracle.abs_tol/rel_tol`; exact comparison is valid because
+the golden runs are bit-reproducible.
 
-Targets are chosen from a small instruction tree (`core/taxonomy.py`); each leaf
-maps to a NVBitFI group and optional opcode whitelist:
-
-```
-arithmetic: fp64, fp32, ffma*, fadd*, fmul*, fp16*, int*, mma*
-            (* opcode-filtered: ffma/fadd/fmul filter the fp32 bucket, others filter "others")
-memory:     load, atomic, store(not injectable)
-control:    predicate, nodest(not injectable)
-meta:       gppr, gp, other
-```
-
-`./sdc-lab taxonomy` prints it. Selection accepts a leaf (`--group atomic`), a
-path (`--group memory/atomic`) or a whole category (`--group arithmetic`).
-`memory/atomic` uses a dedicated NVBitFI `atom` group added by
-`scripts/patch_nvbitfi.py`; leaves marked opcode-filtered sample inside the
-shared `others` bucket and are only counted when the hit opcode is in the set
-(otherwise `NOT_TARGETED`).
-
-## Workloads
-
-| name | computation | instruction coverage |
-|---|---|---|
-| `gemm` | `C=A×B` (FP32, deterministic) — scalar CUDA-Core era | fp32, ld, gp, pr |
-| `gemm_bf16` | `C=A×B` (BF16×BF16 → FP32, cuBLAS Tensor Core) | **mma (HMMA)** |
-| `reduce` | block reduction + `atomicAdd` | atom, fp32, ld, gp |
-| `conv2d` | direct 2-D convolution | fp32, ld, gp |
-| `softmax` | row-wise softmax | fp32, ld, gp, MUFU/others |
-| `attention` | single-head explicit-math attention | fp32, ld, gp, MUFU/others |
-| `mlp` | 2-layer MLP forward + one backward step | fp32, ld, gp, MUFU + multi-output |
-
-All are deterministic (bit-exact golden). `mlp` emits six named tensors
-(`A1, logits, probs, loss, dW1, dW2`) so error propagation can be observed per
-layer. `scripts/smoke_workloads.sh` verifies determinism for all of them.
-
-`gemm_bf16` is the current focus: BF16 inputs, FP32 accumulation via cuBLAS
-Tensor Core (HMMA), with HMMA/FP32-accumulator fault injection. See
-[docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md). The FP32 scalar GEMM experiments
-(015–019) are archived ([docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md)).
-
-## Input generators
-
-`core/inputgen.py` produces deterministic tensors for the study:
-`uniform, normal, lognormal, sparse, cancellation, near_overflow, correlated,
-adversarial, ones, near_zero, near_one, extreme, small, large`, plus the
-LLM-activation-oriented `heavy_tail_act, residual_stream, swiglu_gated` and
-`real` (load a tensor from disk). Tensors are materialised as FP32 or **BF16**
-(raw uint16; `--dtype` on the workload). A workload with an `input_spec` (see
-`experiments/015_*`, `020_*`) materialises them into `results/_inputs/` and
-passes them to the kernel (`--input/--inputA/...`). `./sdc-lab gen-input`
-writes one directly; `scripts/features.py` extracts interpretable features
-(dynamic range, kurtosis, outlier/nonneg fraction, cancellation, exponent
-stats, ...). See
-[docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md) for what each family means,
-with concrete example values.
-
-## Input-dependent campaign (015–019)
-
-`kind: input_grid` sweeps an input family against one second variable while
-holding the rest fixed (paired design), producing composite `input|<value>`
-cells:
-
-| experiment | second variable | notes |
-|---|---|---|
-| `015_input_bit_gemm` | FP32 bit 0–31 | core input × bit heatmap |
-| `016_input_instruction_gemm` | FFMA / FADD / FMUL | opcode-filtered; FADD/FMUL use `--op-mode muladd` |
-| `017_input_size_gemm` | 128/512/1024 | |
-| `018_input_position_gemm` | early / middle / late | |
-| `019_register_class_gemm` | accumulator / temporary | static SASS labelling, see `core/regclass.py` |
-
-Run them and collect a single master CSV + Wilson-CI cell summary:
-
-```bash
-python3 scripts/campaign.py run 015_input_bit_gemm 016_input_instruction_gemm
-python3 scripts/campaign.py collect 015_input_bit_gemm 016_input_instruction_gemm
-python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit
-# wide-dynamic-range metrics: log colour scale + numeric values in every cell
-python3 scripts/heatmap.py results/_campaign/cells.csv --axis bit \
-    --metric mean_abs_err --log-color --annotate
-python3 scripts/stats.py --cells results/_campaign/cells.csv uniform bit
-python3 scripts/campaign_report.py results/_campaign/cells.csv \
-    results/_campaign/CAMPAIGN_SUMMARY.md --master results/_campaign/master.csv
-```
-
-Tolerance sensitivity is computed **offline** from the preserved raw outputs
-(no GPU re-run): `scripts/tolerance_sweep.py` re-classifies the same samples at
-levels L1..L5 = `(1e-7,1e-6) .. (1e-3,1e-2)` (synchronous ×10 scaling), and
-`scripts/tolerance_heatmaps.py` draws one input × bit heatmap per level. See
-`results/_tolerance/TOLERANCE_LEVELS.md`.
-
-```bash
-python3 scripts/tolerance_sweep.py 015_input_bit_gemm 016_input_instruction_gemm \
-    017_input_size_gemm 018_input_position_gemm 019_register_class_gemm \
-    --out results/_tolerance
-python3 scripts/tolerance_heatmaps.py \
-    --cells results/_tolerance/tolerance_by_cell.csv \
-    --experiment 015_input_bit_gemm --outdir results/_tolerance/figs
-```
-
-`campaign.py` merges every `observations.jsonl` into
-`results/_campaign/master.csv` and `results/_campaign/cells.csv` (per-axis
-Wilson CIs). `heatmap.py` renders stdlib-only SVG heatmaps + pivot CSVs.
-
-## Instruction-type targeting
-
-The NVBitFI `fp32` bucket is one group; `core/taxonomy.py` exposes opcode-
-filtered views of it (`arithmetic/ffma`, `arithmetic/fadd`, `arithmetic/fmul`)
-so a hit is only counted when the executed opcode matches. GEMM's inner loop is
-pure FFMA, so `gemm` supports `--op-mode muladd`, which forces separate
-`__fmul_rn`/`__fadd_rn` instructions (still deterministic) to materialise FADD
-and FMUL in the same kernel. Default `--op-mode fma` is byte-identical to the
-original GEMM.
-
-## Register-class labelling
-
-`core/regclass.py` disassembles the workload (`cuobjdump -sass`, cached under
-`results/_sass/`) and labels each FP32 instruction's destination as
-`accumulator` (destination is also an operand, i.e. an in-place running sum) or
-`temporary`. The runner attaches `fault.register_class` to every record and
-writes `register_class_summary.csv`. This is a static, best-effort heuristic.
-
-## Analysis tools
-
-`scripts/stats.py` (Wilson CI, McNemar, two-proportion z, Holm),
-`scripts/features.py` (input features), `scripts/predictor.py` (ridge model +
-leave-one-out), `scripts/sampling.py` (uniform vs input-aware SDC discovery),
-`scripts/analyze.py` (per-experiment summary).
-
-## SDC classification
-
-| class   | condition |
-|---------|-----------|
-| CRASH   | timeout, non-zero exit, CUDA error / illegal access / misaligned address |
-| MASKED  | run completes and output is bit-identical to golden |
-| SDC     | run completes and output differs from golden (NaN/Inf flagged) |
-| NOT_INJECTED | fault site never executed (bookkeeping only) |
-
-Thresholds come from `oracle.abs_tol/rel_tol`, defaulting to exact
-comparison, which is valid because the GEMM golden is bit-reproducible
-(verified in experiment 001).
-
-## Extending
+### Extending
 
 - **Workload**: implement `core/workload/base.py` and register it.
-- **Injector**: implement `core/injection/base.py` (e.g. software injector)
-  and register it. The runner never imports NVBitFI directly.
-- **Observer**: add an `Observer` (activation / gradient / loss / weight /
-  DCGM) in `core/observer/`; the runner aggregates them.
+- **Injector**: implement `core/injection/base.py` and register it.
+- **Observer**: add an observer under `core/observer/`.
 - **Oracle / experiment kind**: add a builder in `core/experiments.py`.
 
-## Compatibility notes (A100 + CUDA 13.0)
+### Compatibility (A100 + CUDA 13.0)
 
-NVBitFI (2020) needed two source patches, applied automatically by
-`scripts/setup_nvbitfi.sh`; no system/driver changes were made:
+NVBitFI (2020) needs two source patches, applied by `scripts/setup_nvbitfi.sh`:
+`ballot()` → `__activemask()`/`__ballot_sync`, and removal of device-side
+`printf()/assert()` (CUDA ≥ 13.1 only). No system driver changes are made.
 
-1. profiler: `ballot()` -> `__activemask()` / `__ballot_sync`.
-2. injector: device-side `printf()/assert()` compiled out (they require
-   CUDA >= 13.1 and otherwise raise `CUDA_ERROR_INVALID_SOURCE`).
+---
+
+## Experiments
+
+All experiments below are configurations on the platform. The **main set** is
+001–019 and 047; 020–023 and 030–040 are development/auxiliary runs listed at
+the end.
+
+### 001–007: platform bring-up and scalar GEMM basics
+
+| ID | Question | Results |
+|---|---|---|
+| [001_gemm_baseline](experiments/001_gemm_baseline/experiment.yaml) | Is the golden GEMM bit-reproducible? | [report](results/001_gemm_baseline/report.md) |
+| [002_fault_position](experiments/002_fault_position/experiment.yaml) | How does early/middle/late instruction position affect SDC? | [report](results/002_fault_position/report.md) |
+| [003_fault_type](experiments/003_fault_type/experiment.yaml) | How do bitflip / twobit / random / zero faults compare? | [report](results/003_fault_type/report.md) |
+| [004_fault_bit](experiments/004_fault_bit/experiment.yaml) | Which FP32 bit fields (sign / exponent / mantissa) are most damaging? | [report](results/004_fault_bit/report.md) |
+| [005_gemm_size](experiments/005_gemm_size/experiment.yaml) | Does GEMM size change SDC probability? | [report](results/005_gemm_size/report.md) |
+| [006_data_pattern](experiments/006_data_pattern/experiment.yaml) | Does the input data pattern change SDC probability? | [report](results/006_data_pattern/report.md) |
+| [007_reduce_atomic](experiments/007_reduce_atomic/experiment.yaml) | How do atomics compare with FP32/load/global-memory faults? | [report](results/007_reduce_atomic/report.md) |
+
+Group summary: [results/SDCLAB_SUMMARY.md](results/SDCLAB_SUMMARY.md).
+
+### 008–014: input sensitivity across workloads
+
+These paired experiments vary only the input distribution while holding the
+fault site fixed. They established the input-dependent SDC direction used by
+the paper; per-experiment result directories are not retained in this checkout.
+
+| ID | Question | Links |
+|---|---|---|
+| [008_input_sensitivity_gemm](experiments/008_input_sensitivity_gemm/experiment.yaml) | Input-family sensitivity of GEMM | [plan](docs/RESEARCH_PLAN.md), [abstract](PAPER_ABSTRACT.md) |
+| [009_input_sensitivity_reduce](experiments/009_input_sensitivity_reduce/experiment.yaml) | Input sensitivity of reduction / atomics | [plan](docs/RESEARCH_PLAN.md) |
+| [010_input_sensitivity_softmax](experiments/010_input_sensitivity_softmax/experiment.yaml) | Input sensitivity of softmax | [plan](docs/RESEARCH_PLAN.md) |
+| [011_input_sensitivity_conv2d](experiments/011_input_sensitivity_conv2d/experiment.yaml) | Input sensitivity of 2-D convolution | [plan](docs/RESEARCH_PLAN.md) |
+| [012_input_sensitivity_attention](experiments/012_input_sensitivity_attention/experiment.yaml) | Input sensitivity of explicit attention | [plan](docs/RESEARCH_PLAN.md) |
+| [013_input_sensitivity_mlp](experiments/013_input_sensitivity_mlp/experiment.yaml) | Input sensitivity and per-layer propagation in MLP | [plan](docs/RESEARCH_PLAN.md) |
+| [014_cross_workload](experiments/014_cross_workload/experiment.yaml) | Cross-workload comparison | [plan](docs/RESEARCH_PLAN.md) |
+
+### 015–019: input × variable campaign (scalar GEMM)
+
+`kind: input_grid` sweeps an input family against one second variable in a
+paired design. These are the scalar CUDA-Core GEMM campaign, archived for
+reference; see [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md).
+
+| ID | Second variable | Results |
+|---|---|---|
+| [015_input_bit_gemm](experiments/015_input_bit_gemm/experiment.yaml) | FP32 bit 0–31 | [results](results/015_input_bit_gemm/) |
+| [016_input_instruction_gemm](experiments/016_input_instruction_gemm/experiment.yaml) | FFMA / FADD / FMUL | [results](results/016_input_instruction_gemm/) |
+| [017_input_size_gemm](experiments/017_input_size_gemm/experiment.yaml) | size 128 / 512 / 1024 | [results](results/017_input_size_gemm/) |
+| [018_input_position_gemm](experiments/018_input_position_gemm/experiment.yaml) | early / middle / late | [results](results/018_input_position_gemm/) |
+| [019_register_class_gemm](experiments/019_register_class_gemm/experiment.yaml) | accumulator / temporary register | [results](results/019_register_class_gemm/) |
+
+Campaign-level links:
+[per-cell summary](results/_campaign/CAMPAIGN_SUMMARY.md),
+[L1–L5 tolerance](results/_tolerance/TOLERANCE_LEVELS.md).
+
+### 047: attention five-GEMM campaign
+
+`047_attn_5gemm_full` injects single bit flips into the HMMA accumulators of a
+BF16 causal attention forward pass (`S=128, D=2048, H=32`). It covers five
+GEMM stages (`qkv_q`, `qkv_k`, `qkv_v`, `qk`, `pv`), bits 24–30, early/middle/
+late positions, and 30 injections per cell (3150 total). Classification uses
+L4 (`|ΔY| > 1e-4 + 1e-3|Y|`).
+
+Key results: **1507/3150 SDC (47.8%)**. QKV-Q, QK and PV are strictly
+single-token; QKV-K is broad (median 20 affected token rows); QKV-V is
+intermediate. 55 bit-30 runs produce NaN/Inf and are handled explicitly.
+
+Links:
+[campaign results](results/047_attn_5gemm_full/),
+[figure notes](results/047_attn_5gemm_full/final_heatmaps_v2/README.md),
+[token-count summary](results/047_attn_5gemm_full/final_heatmaps_v2/summary/token_count_distribution.png),
+[golden-vs-delta](results/047_attn_5gemm_full/final_heatmaps_v2/summary/golden_vs_delta_hexbin.png),
+[attention design](docs/ATTENTION.md),
+[heatmap redesign](docs/HEATMAP_REDESIGN.md).
+
+### Auxiliary / development runs
+
+| ID | Purpose | Links |
+|---|---|---|
+| 020–023 | BF16 Tensor-Core input × bit/size (early/middle/late) | [TC summary](results/_tc_campaign/TC_SUMMARY.md), [tolerance](results/_tc_tolerance/TOLERANCE_LEVELS.md), [doc](docs/TC_BF16_HMMA.md) |
+| 030–033 | Attention dev/target baselines | [attention doc](docs/ATTENTION.md), [configs](experiments/030_attn_single_dev_baseline/experiment.yaml) |
+| 040 | Attention stage smoke test | [attention doc](docs/ATTENTION.md), [config](experiments/040_attn_stage_smoke/experiment.yaml) |
+
+---
+
+## Documentation index
+
+- [PAPER_ABSTRACT.md](PAPER_ABSTRACT.md) — paper abstract (EN/ZH)
+- [docs/RESEARCH_PLAN.md](docs/RESEARCH_PLAN.md) — experiment program
+- [docs/INPUT_FAMILIES.md](docs/INPUT_FAMILIES.md) — input families
+- [docs/TC_BF16_HMMA.md](docs/TC_BF16_HMMA.md) — Tensor-Core/HMMA campaign
+- [docs/ATTENTION.md](docs/ATTENTION.md) — attention workload and 047 campaign
+- [docs/HEATMAP_REDESIGN.md](docs/HEATMAP_REDESIGN.md) — figure redesign and captions
+- [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — scalar GEMM archive
