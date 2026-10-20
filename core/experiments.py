@@ -5,6 +5,8 @@ Fault targets are chosen from the instruction taxonomy tree
 (e.g. "memory/atomic"), or a whole category; a subtree expands to its leaves.
 """
 
+import random
+
 from core import inputgen
 from core import taxonomy
 
@@ -260,11 +262,26 @@ def build_cases(expt):
         bits = expt.get("bits", list(range(32)))
         heads = expt.get("heads")
         per = int(expt.get("injections_per_cell", 1))
+        positions = expt.get("positions", ["early", "middle", "late"])
         base = base_params(expt)
         H = int(base.get("H", expt.get("num_heads", 1)))
+        head_mode = expt.get("head_mode")
+        if heads == "random":
+            head_mode = "random"
+            heads = None
+        head_pool = [int(h) for h in expt.get("head_pool", list(range(H)))]
+        if not head_pool:
+            head_pool = list(range(H))
+        # Deterministic position RNG: each (stage, head, bit) samples its
+        # early/middle/late order from a shuffled cycle, so every bit gets
+        # near-balanced position coverage while the order stays random.
+        pos_rng = random.Random(int(expt.get("seed", 1234)) ^ 0x9E3779B9)
+        head_rng = random.Random(int(expt.get("seed", 1234)) ^ 0x51ED270B)
         for stage in stages:
             if stage.startswith("qkv") or stage == "wo":
                 stage_heads = [None]
+            elif head_mode == "random":
+                stage_heads = ["random"]
             else:
                 stage_heads = ([int(h) for h in heads] if heads is not None
                                else list(range(H)))
@@ -272,12 +289,23 @@ def build_cases(expt):
                 for bit in bits:
                     labels = {"stage": stage, "input": "synthetic",
                               "workload": wl, "bit": int(bit)}
-                    if h is not None:
+                    if h is not None and h != "random":
                         labels["head"] = int(h)
-                    labels["cell"] = "%s%s|bit%s" % (
-                        stage, "" if h is None else "|h%d" % int(h), bit)
-                    for _ in range(per):
-                        add(labels, dict(base), "bitflip", int(bit), (0.0, 1.0))
+                    order = []
+                    while len(order) < per:
+                        chunk = list(positions)
+                        pos_rng.shuffle(chunk)
+                        order.extend(chunk)
+                    for pos in order[:per]:
+                        hh = head_rng.choice(head_pool) if h == "random" else h
+                        lab = dict(labels)
+                        if hh is not None:
+                            lab["head"] = int(hh)
+                        lo, hi = POSITION_RANGES.get(pos, (0.0, 1.0))
+                        lab["position"] = pos
+                        lab["cell"] = "%s%s|%s|bit%s" % (
+                            stage, "" if hh is None else "|h%d" % int(hh), pos, bit)
+                        add(lab, dict(base), "bitflip", int(bit), (lo, hi))
 
     else:
         raise ValueError("unknown experiment kind '%s'" % kind)

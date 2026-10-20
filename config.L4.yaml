@@ -1,0 +1,16 @@
+# L4 classification config: |f - g| > abs_tol + rel_tol*|g|
+# (used for the 047 five-GEMM attention campaign)
+gpu: 1
+nvbit_home: third_party/nvbit_release_x86_64
+nvbitfi_home: third_party/nvbit_release_x86_64/tools/nvbitfi
+injector_lib: third_party/nvbit_release_x86_64/tools/nvbitfi/injector/injector.so
+profiler_lib: third_party/nvbit_release_x86_64/tools/nvbitfi/profiler/profiler.so
+results_dir: results
+oracle:
+  abs_tol: 1.0e-4
+  rel_tol: 1.0e-3
+  nan_inf_dominant_ratio: 0.5
+runtime:
+  default_timeout: 600
+  profile_timeout: 1800
+  nvbit_arch: sm_80

@@ -1,0 +1,1 @@
+{"S":128,"D":2048,"H":32,"dh":64,"dtype":"bf16","accumulate":"fp32","mask":"causal","backend":"cublas","seed":1234,"device":0,"device_name":"NVIDIA A100-SXM4-80GB","elements":262144,"dump":1,"finite":true,"checksum":-555917.1033}

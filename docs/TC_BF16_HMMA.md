@@ -102,18 +102,21 @@ injections are re-classified offline at levels L1..L5 = `(1e-7,1e-6) ..
 ## Raw SDC magnitude vs bit
 
 `scripts/plot_sdc_raw.py` (needs matplotlib; local analysis only) plots **every**
-SDC sample as a point: x = bit 0–31, y = |C'−golden| (log scale), coloured by
+SDC sample as a point: x = bit 0–30, y = |C'−golden| (log scale), coloured by
 input distribution, with the exponent region (23–30) shaded and a bottom panel
-of N_sdc / N_masked per bit. Instead of a pooled median line it overlays **two
-branch-median lines** (one per bit, pooled across inputs), split by the per-input
-output scale `G` (derived from the current samples: `G_in = median|Δ|(mantissa) ·
-2^(23−bit)`):
+of N_sdc / N_masked per bit. The **sign bit (31) is excluded** and the plot is
+truncated at bit 31. Instead of a pooled median line it overlays **two pooled
+branch lines** (one per bit, pooled across inputs), split at the per-bit
+**geometric mean** of `|Δ|` and smoothed with a **LOWESS** fit in log space:
 
-* **explode** branch (`|Δ| > K·G`, red solid) — exponent bit raised, value blown up;
-* **collapse** branch (`|Δ| ≤ K·G`, blue dashed) — exponent bit lowered, value
-  crushed toward zero.
+* **explode** line (`max |Δ|` of the above-geo-mean samples, red solid) — the top
+  of the exponent-bit blow-up (raw max ≈ 3e38 at bit 30; the smoothed line ≈ 1e34);
+* **collapse** line (`min |Δ|` of the below-geo-mean samples, blue dashed) — the
+  weakest exposure, value crushed toward zero.
 
-`K` defaults to 10. One figure per (accumulator position × tolerance level):
+The vertical gap between the two lines is the per-bit **exposure** (spread
+between the strongest blow-up and the weakest crush). One figure per
+(accumulator position × tolerance level):
 
 ```
 results/_tc_campaign/figs/bit_diff_{early,middle,late}_L{0..5}.svg  (+ _counts.csv)

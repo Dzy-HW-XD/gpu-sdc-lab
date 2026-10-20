@@ -1,0 +1,18 @@
+id: 047_attn_5gemm_full
+kind: attention_stage
+workload: attention_forward
+injector: nvbitfi
+groups: [mma]
+fault_type: bitflip
+stages: [qkv_q, qkv_k, qkv_v, qk, pv]
+head_mode: random
+bits: [24, 25, 26, 27, 28, 29, 30]
+injections_per_cell: 90
+positions: [early, middle, late]
+seed: 20261027
+workload_params:
+  S: 128
+  D: 2048
+  H: 32
+  dtype: bf16
+  dump: 1

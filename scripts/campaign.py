@@ -221,6 +221,8 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="gpu-sdc-lab batch campaign")
     p.add_argument("--lab-config",
                    default=os.path.join(LAB_ROOT, "config.yaml"))
+    p.add_argument("--gpu", type=int, default=None,
+                   help="override config gpu (CUDA_VISIBLE_DEVICES for the shard)")
     p.add_argument("--master",
                    default=None, help="master CSV path")
     sub = p.add_subparsers(dest="cmd")
@@ -234,7 +236,9 @@ def main(argv=None):
         sp.add_argument("experiments", nargs="*")
     args = p.parse_args(argv)
 
-    lab = load_lab_config(args.lab_config)
+    lab = load_lab_config(
+        args.lab_config,
+        {"gpu": args.gpu} if args.gpu is not None else None)
     master = args.master or os.path.join(lab.results_dir, "_campaign", "master.csv")
     eids = args.experiments
 

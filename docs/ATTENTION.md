@@ -1,8 +1,10 @@
 # Attention SDC experiments (`attention_forward`)
 
 Status: **Phase 1–3 implemented and validated on `node20` (A100, sm_80)**.
-Phases 4–5 (target-size single-vs-multi campaign, extra input distributions)
-are still open; see the end of this document.
+The current campaign is **`047_attn_5gemm_full`**: five GEMM stages, bits
+24–30, random head for score/PV, classified with **L4** (`abs=1e-4`,
+`rel=1e-3`) only. Phases 4–5 (single-vs-multi target campaign, input
+distributions) remain open; see the end of this document.
 
 ## Model
 
@@ -81,15 +83,19 @@ python3 scripts/attention_profile.py --S 64 --D 256 --H 4 --tag attn_dev
 
 # real single-fault injections (3 stages)
 ./sdc-lab run --experiment 040_attn_stage_smoke
-# broader dev campaign (5 stage/head groups x bits {0,27,29})
-./sdc-lab run --experiment 041_attn_stage_dev
 
-# per-injection intermediate metrics + aggregates (stdlib)
-python3 scripts/attention_collect.py results/041_attn_stage_dev
+# five-GEMM campaign (qkv_q/k/v, qk, pv), bits 24-30, L4 oracle, random head
+python3 scripts/campaign.py --lab-config config.L4.yaml --gpu 0 run \
+    --shard 0 --nshards 4 --tag gpu0 047_attn_5gemm_full
+# ... repeat for gpu1/2/3; then merge/collect
+python3 scripts/attention_merge_shards.py --eid 047_attn_5gemm_full
+python3 scripts/attention_select_runs.py --exp results/047_attn_5gemm_full
+python3 scripts/attention_head_errors.py --exp results/047_attn_5gemm_full
+python3 scripts/attention_injection_trace.py --exp results/047_attn_5gemm_full
 
 # dashboards (matplotlib; run where matplotlib is installed)
 python scripts/attention_plots.py \
-    --metrics <per-run metrics json> --outdir plots --runs-jsonl <attention_runs.jsonl>
+    --metrics <per-run metrics json> --outdir plots --runs-jsonl <runs.jsonl>
 ```
 
 `scripts/attention_selftest.py` checks the metric code with synthetic known
@@ -106,31 +112,64 @@ diffs (single changed element, per-head/per-token support, identical -> MASKED).
 | `Ocat` == concat(`O`) | exact (0 mismatch) |
 | target-size runtime (3 un-instrumented runs) | ~2.3–2.4 s total |
 
-### Real injection campaign `041_attn_stage_dev`
+### Five-GEMM L4 campaign `047_attn_5gemm_full`
 
-S=64, D=256, H=4; one fault per run; bit flip in an HMMA destination register.
-21 injections, **0 NOT_INJECTED, 0 CRASH**:
+Target MHA: **S=128, D=2048, H=32, dh=64**; one fault per run; bit flip in an
+HMMA destination register; classified with **L4 only**
+(`|Y_f − Y_g| > 1e-4 + 1e-3·|Y_g|`).
 
-| stage | head | n | MASKED | SDC | mean Y rel-L2 |
-|---|---|---|---|---|---|
-| qkv_q | – | 3 | 3 | 0 | 0 |
-| qkv_k | – | 3 | 2 | 1 | 0.081 |
-| qkv_v | – | 3 | 3 | 0 | 0 |
-| qk | 0 | 3 | 2 | 1 | 0.036 |
-| qk | 2 | 3 | 3 | 0 | 0 |
-| pv | 0 | 3 | 3 | 0 | 0 |
-| pv | 2 | 3 | 2 | **1** | **3.5e16** |
+* stages: `qkv_q`, `qkv_k`, `qkv_v` (shared projections) and `qk`, `pv`
+  (per-head GEMMs; the head is chosen uniformly at random per injection from
+  0..31, recorded in `labels.head`)
+* bits **24..30**; 90 injections per (stage, bit) = 30 early + 30 middle +
+  30 late
+* total **3150** injections, sharded over 4 GPUs
 
-All SDCs occurred at **bit 29** (exponent); bits 0 and 27 were masked in this
-sample. The PV/head-2/bit-29 fault was localized to head 2 (`O` head error
-6.8e19, other heads exactly 0), to token row 9, and propagated through the
-output projection to all 256 features of that token (Y rel-L2 1.0e17).
+**Results: 1507 / 3150 SDC (47.8%), 1643 MASKED, 0 CRASH / NOT_INJECTED.**
+
+| stage | L4 SDC rate | median affected tokens | exactly 1 token |
+|---|---|---|---|
+| qkv_q | 0.544 | 1 | 93.6% |
+| qkv_k | **0.633** | **16** | 17.0% |
+| qkv_v | 0.549 | 2 | 44.5% |
+| qk | 0.146 | 1 | 100% |
+| pv | 0.519 | 1 | 99.4% |
+
+Position: early 0.432, middle 0.483, late 0.520. Bit: 24 0.280, 25 0.393,
+26 0.518, 27 0.582, 28 0.544, 29 0.578, 30 0.453.
+
+Propagation (mean relative L2, representative runs):
+
+* `qkv_q` / `qk`: S ~1e15 -> P/O/Ocat/Y ~1e-2 (softmax damps the score error)
+* `qkv_k`: S ~1e31 -> P/O/Ocat/Y ~1e-2
+* `qkv_v`: S/P ~1e-2 -> O/Ocat/Y ~1e35
+* `pv`: S/P = 0 -> O/Ocat/Y ~1e35
+
+Footprint: Q/Score/PV faults are **query-local** (one token row per run; across
+30 random instances the support map covers many tokens). **K faults are broad**
+(causal fan-out: queries i >= key j; median 16 tokens, up to ~70); V is
+intermediate (median 2). This is why the final-Y heatmaps for `qkv_k` show
+multiple rows while `qkv_q/qk/pv` show one row per run.
+
+Outputs: `final_heatmaps/` (105 figures; 30-run mean `log10|Y_f-Y_g|`
+(non-zero) with a **global fixed** `[-3, 6]` colour range, `>1e6` clipped;
+30-run L4 support
+fixed `0-1`; cumulative Token/Feature coverage; SDC count/rate, mean relL2 and
+support ratio in the title/stats panel), `stage_heatmaps/` (103 S/P/O `|diff|`
+figures with **global per-tensor** log ranges and fixed Token/Feature axes),
+`stage_summary/`, `bit_sensitivity/`, `footprint/`, `injection_trace.csv/jsonl`.
+There is no L0–L5 sweep; L4 is the single classification.
 
 ## Known limitations / open issues
 
-* **Dev size only so far.** The target campaign (S=128, D=2048, H=1 vs H=32)
-  has only been run as a *baseline*; injections at target size are Phase 4.
-* **Per-head launches cost more.** B/C-MultiHead uses H score + H PV launches
+* **L4 only.** `047` classifies with L4 (`abs=1e-4`, `rel=1e-3`); there is no
+  L0–L5 sweep in the current campaign.
+* **bit 30 can overflow.** Some bit-30 runs produce Inf/NaN; the comparator
+  counts them as SDC, and the finite-error medians drop at bit 30.
+* **Single-vs-multi comparison still open.** The target-size (S=128, D=2048)
+  campaign is now multi-head (H=32); a matched single-head (H=1) injection
+  campaign has not been run yet.
+* **Per-head launches cost more.** Multi-head uses H score + H PV launches
   instead of one batched GEMM. This is required for head-attributable faults.
 * **Softmax/concat/Wo are not injected** in Phase 1–3 (they are observation
   points only), per the proposal.
@@ -139,3 +178,21 @@ output projection to all 256 features of that token (Y rel-L2 1.0e17).
 * **One fault per run**, single GPU; no decode/KV-cache/LLM replay.
 * `attention_forward` currently generates synthetic X and weights from the seed;
   input-family control (sparse/near-zero/correlated) is Phase 5.
+
+## Publication figures (v2)
+
+The v1 dashboard-style heatmaps have been superseded by a publication-quality
+set; see `docs/HEATMAP_REDESIGN.md` for the critique, the plotting-skill
+checklist, and caption templates.  New outputs:
+
+* `results/047_attn_5gemm_full/final_heatmaps_v2/` — 105 cells, PDF + 600 dpi
+  PNG, with a small review footer;
+* `results/047_attn_5gemm_full/final_heatmaps_v2_paper/` — the same 105 cells
+  as PDF without the footer, for manuscript captions;
+* `results/047_attn_5gemm_full/final_heatmaps_v2/overview/` — a 5 x 3
+  stage-by-position summary, recommended as the main-text figure.
+
+The v2 data (`final_heatmaps_data_v2_nf/`) is non-finite aware: NaN/Inf
+outputs are counted as affected (55 of 3150 runs, 11 cells, all at bit 30)
+and shown in black on the error panel.  This fixes the v1 case where a cell
+could report `SDC 13/30` but appear empty.
