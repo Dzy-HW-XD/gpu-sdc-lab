@@ -273,5 +273,6 @@ Links:
 - [docs/LLM_SDC_PILOT.md](docs/LLM_SDC_PILOT.md) — LLM SDC pilot and phased plan
 - [docs/LLM_STRUCTURE_INJECTION.md](docs/LLM_STRUCTURE_INJECTION.md) — LLM block structure and injection points
 - [docs/EXPERIMENT_PLAN_HIGHBIT_OUTPUT.md](docs/EXPERIMENT_PLAN_HIGHBIT_OUTPUT.md) — high-bit activation plan
-- [docs/REPORT_HIGHBIT_OUTPUT.md](docs/REPORT_HIGHBIT_OUTPUT.md) — high-bit output-corruption results
+- [docs/REPORT_HIGHBIT_OUTPUT.md](docs/REPORT_HIGHBIT_OUTPUT.md) — high-bit output-corruption pilot
+- [docs/REPORT_HIGHBIT_OUTPUT_200.md](docs/REPORT_HIGHBIT_OUTPUT_200.md) — strict clean 200-prompt Qwen experiment
 - [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — scalar GEMM archive

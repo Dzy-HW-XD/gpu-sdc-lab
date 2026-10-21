@@ -157,7 +157,7 @@ def wilson(k, n, z=1.96):
     return (max(0.0, center - half), min(1.0, center + half))
 
 
-def add_metrics(r, prompts):
+def add_metrics(r, prompts, strict_clean=False):
     p = prompts[r["prompt_id"]]
     expected = p["expected"]
     category = p["category"]
@@ -165,7 +165,10 @@ def add_metrics(r, prompts):
     out = r.get("output", "")
     cflags = text_flags(clean_out)
     clean_pos = find_expected(clean_out, expected)
-    clean_ok = clean_pos is not None and clean_pos <= 4
+    if strict_clean:
+        clean_ok = clean_pos == 0
+    else:
+        clean_ok = clean_pos is not None and clean_pos <= 4
 
     r["clean_ok2"] = int(clean_ok)
     r["answer_pos"] = clean_pos if clean_pos is not None else ""
@@ -279,6 +282,8 @@ def main():
     ap.add_argument("--data", default="results/llm_highbit_output")
     ap.add_argument("--prompts", default="data/highbit_prompts.json")
     ap.add_argument("--out", default="results/llm_highbit_output")
+    ap.add_argument("--strict-clean", action="store_true",
+                    help="require the expected answer at the first output token")
     args = ap.parse_args()
 
     prompts = {p["id"]: p for p in json.load(open(args.prompts, encoding="utf-8"))}
@@ -291,7 +296,7 @@ def main():
             for r in csv.DictReader(f):
                 r["model_short"] = r.get("model_short") or ""
                 r["model_label"] = MODEL_LABEL.get(r["model_short"], r["model_short"])
-                rows.append(add_metrics(r, prompts))
+                rows.append(add_metrics(r, prompts, args.strict_clean))
     rows.sort(key=lambda r: (MODEL_ORDER.index(r["model_short"])
                              if r["model_short"] in MODEL_ORDER else 99,
                              r["prompt_id"], r["condition"], r["layer_tag"], r["bit"]))
@@ -325,7 +330,9 @@ def main():
 
     # outcome composition for bits 28/29 (the consistently damaging bit pair)
     comp = []
-    for ms in MODEL_ORDER:
+    present_models = [m for m in MODEL_ORDER
+                      if any(r["model_short"] == m for r in fault)]
+    for ms in present_models:
         rs = [r for r in fault if r["model_short"] == ms
               and int(r["bit"]) in (28, 29)
               and r["catastrophic2"] not in ("", None)]

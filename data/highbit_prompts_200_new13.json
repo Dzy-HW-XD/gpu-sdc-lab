@@ -1,0 +1,106 @@
+[
+ {
+  "id": "fact_41",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Iceland is",
+  "expected": [
+   "Reykjavik"
+  ]
+ },
+ {
+  "id": "fact_42",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Hungary is",
+  "expected": [
+   "Budapest"
+  ]
+ },
+ {
+  "id": "fact_43",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Romania is",
+  "expected": [
+   "Bucharest"
+  ]
+ },
+ {
+  "id": "fact_44",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Bulgaria is",
+  "expected": [
+   "Sofia"
+  ]
+ },
+ {
+  "id": "fact_45",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Croatia is",
+  "expected": [
+   "Zagreb"
+  ]
+ },
+ {
+  "id": "fact_46",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Serbia is",
+  "expected": [
+   "Belgrade"
+  ]
+ },
+ {
+  "id": "fact_47",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Belarus is",
+  "expected": [
+   "Minsk"
+  ]
+ },
+ {
+  "id": "fact_48",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Lithuania is",
+  "expected": [
+   "Vilnius"
+  ]
+ },
+ {
+  "id": "fact_49",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Latvia is",
+  "expected": [
+   "Riga"
+  ]
+ },
+ {
+  "id": "fact_50",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Estonia is",
+  "expected": [
+   "Tallinn"
+  ]
+ },
+ {
+  "id": "fact_51",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Saudi Arabia is",
+  "expected": [
+   "Riyadh"
+  ]
+ },
+ {
+  "id": "fact_52",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Qatar is",
+  "expected": [
+   "Doha"
+  ]
+ },
+ {
+  "id": "fact_53",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Pakistan is",
+  "expected": [
+   "Islamabad"
+  ]
+ }
+]

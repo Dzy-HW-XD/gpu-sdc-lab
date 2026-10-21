@@ -1,5 +1,8 @@
 # 高位激活注错与 LLM 输出乱码/错误：实验报告
 
+> **更新：本文是 24-prompt pilot。** 由于 Pythia 基线过低、clean 口径不够严格，正式统计请使用
+> [`docs/REPORT_HIGHBIT_OUTPUT_200.md`](REPORT_HIGHBIT_OUTPUT_200.md)：两个 Qwen 模型均为 clean 200/200，4,800 个 fault runs。
+
 日期：2026-10-21  
 实验：单元素 FP32 activation high-bit fault injection  
 模型：Pythia-160M / 410M / 1B，Qwen2.5-0.5B / 1.5B  

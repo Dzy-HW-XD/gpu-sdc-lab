@@ -1,0 +1,3 @@
+model_short,model_label,n_eval,garbled,wrong,partial,preserved,garbled_rate,wrong_rate,partial_rate,preserved_rate
+qwen05b,Qwen2.5-0.5B,1200,94,552,120,434,0.07833333333333334,0.46,0.1,0.3616666666666667
+qwen15b,Qwen2.5-1.5B,1200,24,245,252,679,0.02,0.20416666666666666,0.21,0.5658333333333333

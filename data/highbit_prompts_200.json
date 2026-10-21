@@ -1,0 +1,1602 @@
+[
+ {
+  "id": "fact_01",
+  "category": "factual",
+  "prompt": "The capital of Japan is Tokyo. The capital of Italy is Rome. The capital of France is",
+  "expected": [
+   "Paris"
+  ]
+ },
+ {
+  "id": "fact_02",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Italy is Rome. The capital of Japan is",
+  "expected": [
+   "Tokyo"
+  ]
+ },
+ {
+  "id": "fact_03",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Italy is",
+  "expected": [
+   "Rome"
+  ]
+ },
+ {
+  "id": "fact_04",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Germany is",
+  "expected": [
+   "Berlin"
+  ]
+ },
+ {
+  "id": "fact_05",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Spain is",
+  "expected": [
+   "Madrid"
+  ]
+ },
+ {
+  "id": "fact_06",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Portugal is",
+  "expected": [
+   "Lisbon"
+  ]
+ },
+ {
+  "id": "fact_07",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of United Kingdom is",
+  "expected": [
+   "London"
+  ]
+ },
+ {
+  "id": "fact_08",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Canada is",
+  "expected": [
+   "Ottawa"
+  ]
+ },
+ {
+  "id": "fact_09",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Australia is",
+  "expected": [
+   "Canberra"
+  ]
+ },
+ {
+  "id": "fact_10",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Russia is",
+  "expected": [
+   "Moscow"
+  ]
+ },
+ {
+  "id": "fact_11",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of China is",
+  "expected": [
+   "Beijing"
+  ]
+ },
+ {
+  "id": "fact_12",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of India is",
+  "expected": [
+   "New Delhi"
+  ]
+ },
+ {
+  "id": "fact_13",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Egypt is",
+  "expected": [
+   "Cairo"
+  ]
+ },
+ {
+  "id": "fact_14",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Greece is",
+  "expected": [
+   "Athens"
+  ]
+ },
+ {
+  "id": "fact_15",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Turkey is",
+  "expected": [
+   "Ankara"
+  ]
+ },
+ {
+  "id": "fact_16",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Netherlands is",
+  "expected": [
+   "Amsterdam"
+  ]
+ },
+ {
+  "id": "fact_17",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Sweden is",
+  "expected": [
+   "Stockholm"
+  ]
+ },
+ {
+  "id": "fact_18",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Norway is",
+  "expected": [
+   "Oslo"
+  ]
+ },
+ {
+  "id": "fact_19",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Denmark is",
+  "expected": [
+   "Copenhagen"
+  ]
+ },
+ {
+  "id": "fact_20",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Finland is",
+  "expected": [
+   "Helsinki"
+  ]
+ },
+ {
+  "id": "fact_21",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Poland is",
+  "expected": [
+   "Warsaw"
+  ]
+ },
+ {
+  "id": "fact_22",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Austria is",
+  "expected": [
+   "Vienna"
+  ]
+ },
+ {
+  "id": "fact_23",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Belgium is",
+  "expected": [
+   "Brussels"
+  ]
+ },
+ {
+  "id": "fact_24",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Switzerland is",
+  "expected": [
+   "Bern"
+  ]
+ },
+ {
+  "id": "fact_25",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Ireland is",
+  "expected": [
+   "Dublin"
+  ]
+ },
+ {
+  "id": "fact_26",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of New Zealand is",
+  "expected": [
+   "Wellington"
+  ]
+ },
+ {
+  "id": "fact_27",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of South Korea is",
+  "expected": [
+   "Seoul"
+  ]
+ },
+ {
+  "id": "fact_28",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Thailand is",
+  "expected": [
+   "Bangkok"
+  ]
+ },
+ {
+  "id": "fact_29",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Vietnam is",
+  "expected": [
+   "Hanoi"
+  ]
+ },
+ {
+  "id": "fact_30",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Indonesia is",
+  "expected": [
+   "Jakarta"
+  ]
+ },
+ {
+  "id": "fact_31",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Philippines is",
+  "expected": [
+   "Manila"
+  ]
+ },
+ {
+  "id": "fact_32",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Malaysia is",
+  "expected": [
+   "Kuala Lumpur"
+  ]
+ },
+ {
+  "id": "fact_33",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Kenya is",
+  "expected": [
+   "Nairobi"
+  ]
+ },
+ {
+  "id": "fact_34",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Nigeria is",
+  "expected": [
+   "Abuja"
+  ]
+ },
+ {
+  "id": "fact_35",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of South Africa is",
+  "expected": [
+   "Pretoria"
+  ]
+ },
+ {
+  "id": "fact_36",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Morocco is",
+  "expected": [
+   "Rabat"
+  ]
+ },
+ {
+  "id": "fact_37",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Chile is",
+  "expected": [
+   "Santiago"
+  ]
+ },
+ {
+  "id": "fact_38",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Peru is",
+  "expected": [
+   "Lima"
+  ]
+ },
+ {
+  "id": "fact_39",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Venezuela is",
+  "expected": [
+   "Caracas"
+  ]
+ },
+ {
+  "id": "fact_40",
+  "category": "factual",
+  "prompt": "The capital of France is Paris. The capital of Japan is Tokyo. The capital of Cuba is",
+  "expected": [
+   "Havana"
+  ]
+ },
+ {
+  "id": "arit_01",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 2 + 3 =",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "arit_02",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 4 + 5 =",
+  "expected": [
+   "9"
+  ]
+ },
+ {
+  "id": "arit_03",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 7 + 8 =",
+  "expected": [
+   "15"
+  ]
+ },
+ {
+  "id": "arit_04",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 6 + 9 =",
+  "expected": [
+   "15"
+  ]
+ },
+ {
+  "id": "arit_05",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 12 + 7 =",
+  "expected": [
+   "19"
+  ]
+ },
+ {
+  "id": "arit_06",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 8 + 8 =",
+  "expected": [
+   "16"
+  ]
+ },
+ {
+  "id": "arit_07",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 9 + 4 =",
+  "expected": [
+   "13"
+  ]
+ },
+ {
+  "id": "arit_08",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 5 + 7 =",
+  "expected": [
+   "12"
+  ]
+ },
+ {
+  "id": "arit_09",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 11 + 6 =",
+  "expected": [
+   "17"
+  ]
+ },
+ {
+  "id": "arit_10",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 13 + 5 =",
+  "expected": [
+   "18"
+  ]
+ },
+ {
+  "id": "arit_11",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 9 - 4 =",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "arit_12",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 12 - 5 =",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "arit_13",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 15 - 6 =",
+  "expected": [
+   "9"
+  ]
+ },
+ {
+  "id": "arit_14",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 20 - 8 =",
+  "expected": [
+   "12"
+  ]
+ },
+ {
+  "id": "arit_15",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 18 - 9 =",
+  "expected": [
+   "9"
+  ]
+ },
+ {
+  "id": "arit_16",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 14 - 7 =",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "arit_17",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 11 - 3 =",
+  "expected": [
+   "8"
+  ]
+ },
+ {
+  "id": "arit_18",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 17 - 8 =",
+  "expected": [
+   "9"
+  ]
+ },
+ {
+  "id": "arit_19",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 16 - 5 =",
+  "expected": [
+   "11"
+  ]
+ },
+ {
+  "id": "arit_20",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 19 - 7 =",
+  "expected": [
+   "12"
+  ]
+ },
+ {
+  "id": "arit_21",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 3 * 4 =",
+  "expected": [
+   "12"
+  ]
+ },
+ {
+  "id": "arit_22",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 5 * 6 =",
+  "expected": [
+   "30"
+  ]
+ },
+ {
+  "id": "arit_23",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 7 * 8 =",
+  "expected": [
+   "56"
+  ]
+ },
+ {
+  "id": "arit_24",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 9 * 3 =",
+  "expected": [
+   "27"
+  ]
+ },
+ {
+  "id": "arit_25",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 6 * 7 =",
+  "expected": [
+   "42"
+  ]
+ },
+ {
+  "id": "arit_26",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 8 * 9 =",
+  "expected": [
+   "72"
+  ]
+ },
+ {
+  "id": "arit_27",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 4 * 11 =",
+  "expected": [
+   "44"
+  ]
+ },
+ {
+  "id": "arit_28",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 12 * 3 =",
+  "expected": [
+   "36"
+  ]
+ },
+ {
+  "id": "arit_29",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 5 * 9 =",
+  "expected": [
+   "45"
+  ]
+ },
+ {
+  "id": "arit_30",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 7 * 6 =",
+  "expected": [
+   "42"
+  ]
+ },
+ {
+  "id": "arit_31",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 12 / 3 =",
+  "expected": [
+   "4"
+  ]
+ },
+ {
+  "id": "arit_32",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 20 / 5 =",
+  "expected": [
+   "4"
+  ]
+ },
+ {
+  "id": "arit_33",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 18 / 6 =",
+  "expected": [
+   "3"
+  ]
+ },
+ {
+  "id": "arit_34",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 24 / 8 =",
+  "expected": [
+   "3"
+  ]
+ },
+ {
+  "id": "arit_35",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 35 / 7 =",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "arit_36",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 42 / 6 =",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "arit_37",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 56 / 8 =",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "arit_38",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 63 / 9 =",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "arit_39",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 48 / 6 =",
+  "expected": [
+   "8"
+  ]
+ },
+ {
+  "id": "arit_40",
+  "category": "arithmetic",
+  "prompt": "1 + 1 = 2. 3 + 3 = 6. 72 / 9 =",
+  "expected": [
+   "8"
+  ]
+ },
+ {
+  "id": "list_01",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. The first three prime numbers are 2, 3, and",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "list_02",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. The first four prime numbers are 2, 3, 5, and",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "list_03",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. The first five prime numbers are 2, 3, 5, 7, and",
+  "expected": [
+   "11"
+  ]
+ },
+ {
+  "id": "list_04",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three days are Monday, Tuesday, and Wednesday. The first three letters are A, B, and",
+  "expected": [
+   "C"
+  ]
+ },
+ {
+  "id": "list_05",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three days are Monday, Tuesday, and Wednesday. The first four letters are A, B, C, and",
+  "expected": [
+   "D"
+  ]
+ },
+ {
+  "id": "list_06",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three days are Monday, Tuesday, and Wednesday. The first five letters are A, B, C, D, and",
+  "expected": [
+   "E"
+  ]
+ },
+ {
+  "id": "list_07",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three letters are A, B, and C. The first three days are Monday, Tuesday, and",
+  "expected": [
+   "Wednesday"
+  ]
+ },
+ {
+  "id": "list_08",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three letters are A, B, and C. The first four days are Monday, Tuesday, Wednesday, and",
+  "expected": [
+   "Thursday"
+  ]
+ },
+ {
+  "id": "list_09",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three letters are A, B, and C. The first five days are Monday, Tuesday, Wednesday, Thursday, and",
+  "expected": [
+   "Friday"
+  ]
+ },
+ {
+  "id": "list_10",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three letters are A, B, and C. The first three months are January, February, and",
+  "expected": [
+   "March"
+  ]
+ },
+ {
+  "id": "list_11",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three letters are A, B, and C. The first four months are January, February, March, and",
+  "expected": [
+   "April"
+  ]
+ },
+ {
+  "id": "list_12",
+  "category": "list",
+  "prompt": "The first three prime numbers are 2, 3, and 5. The first three letters are A, B, and C. The first five months are January, February, March, April, and",
+  "expected": [
+   "May"
+  ]
+ },
+ {
+  "id": "list_13",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 1, 4, 9, 16, and",
+  "expected": [
+   "25"
+  ]
+ },
+ {
+  "id": "list_14",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 1, 4, 9, 16, 25, and",
+  "expected": [
+   "36"
+  ]
+ },
+ {
+  "id": "list_15",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 1, 4, 9, 16, 25, 36, and",
+  "expected": [
+   "49"
+  ]
+ },
+ {
+  "id": "list_16",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 2, 4, 6, 8, and",
+  "expected": [
+   "10"
+  ]
+ },
+ {
+  "id": "list_17",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 2, 4, 6, 8, 10, and",
+  "expected": [
+   "12"
+  ]
+ },
+ {
+  "id": "list_18",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 2, 4, 6, 8, 10, 12, and",
+  "expected": [
+   "14"
+  ]
+ },
+ {
+  "id": "list_19",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 1, 3, 5, 7, and",
+  "expected": [
+   "9"
+  ]
+ },
+ {
+  "id": "list_20",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 1, 3, 5, 7, 9, and",
+  "expected": [
+   "11"
+  ]
+ },
+ {
+  "id": "list_21",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 1, 3, 5, 7, 9, 11, and",
+  "expected": [
+   "13"
+  ]
+ },
+ {
+  "id": "list_22",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. Count from 1 to 5: 1, 2, 3, 4,",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "list_23",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. Count from 1 to 6: 1, 2, 3, 4, 5,",
+  "expected": [
+   "6"
+  ]
+ },
+ {
+  "id": "list_24",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. Count from 1 to 7: 1, 2, 3, 4, 5, 6,",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "list_25",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 3, 6, 9, 12, and",
+  "expected": [
+   "15"
+  ]
+ },
+ {
+  "id": "list_26",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 3, 6, 9, 12, 15, and",
+  "expected": [
+   "18"
+  ]
+ },
+ {
+  "id": "list_27",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 3, 6, 9, 12, 15, 18, and",
+  "expected": [
+   "21"
+  ]
+ },
+ {
+  "id": "list_28",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 5, 10, 15, 20, and",
+  "expected": [
+   "25"
+  ]
+ },
+ {
+  "id": "list_29",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 5, 10, 15, 20, 25, and",
+  "expected": [
+   "30"
+  ]
+ },
+ {
+  "id": "list_30",
+  "category": "list",
+  "prompt": "The first three letters are A, B, and C. The first three days are Monday, Tuesday, and Wednesday. 5, 10, 15, 20, 25, 30, and",
+  "expected": [
+   "35"
+  ]
+ },
+ {
+  "id": "code_01",
+  "category": "code",
+  "prompt": "The Python keyword for a loop is for. The Python keyword for a while loop is while. The Python keyword to define a function is",
+  "expected": [
+   "def"
+  ]
+ },
+ {
+  "id": "code_02",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a while loop is while. The Python keyword for a loop is",
+  "expected": [
+   "for"
+  ]
+ },
+ {
+  "id": "code_03",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python keyword for a while loop is",
+  "expected": [
+   "while"
+  ]
+ },
+ {
+  "id": "code_04",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python keyword for a conditional is",
+  "expected": [
+   "if"
+  ]
+ },
+ {
+  "id": "code_05",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python keyword for returning a value is",
+  "expected": [
+   "return"
+  ]
+ },
+ {
+  "id": "code_06",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python keyword to import a module is",
+  "expected": [
+   "import"
+  ]
+ },
+ {
+  "id": "code_07",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python keyword to define a class is",
+  "expected": [
+   "class"
+  ]
+ },
+ {
+  "id": "code_08",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python keyword for no value is",
+  "expected": [
+   "None"
+  ]
+ },
+ {
+  "id": "code_09",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python boolean for true is",
+  "expected": [
+   "True"
+  ]
+ },
+ {
+  "id": "code_10",
+  "category": "code",
+  "prompt": "The Python keyword to define a function is def. The Python keyword for a loop is for. The Python boolean for false is",
+  "expected": [
+   "False"
+  ]
+ },
+ {
+  "id": "code_11",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(2 + 3) outputs",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "code_12",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(4 * 5) outputs",
+  "expected": [
+   "20"
+  ]
+ },
+ {
+  "id": "code_13",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(10 - 3) outputs",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "code_14",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(20 // 4) outputs",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "code_15",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(5 % 2) outputs",
+  "expected": [
+   "1"
+  ]
+ },
+ {
+  "id": "code_16",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(2 ** 3) outputs",
+  "expected": [
+   "8"
+  ]
+ },
+ {
+  "id": "code_17",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(len([1, 2, 3])) outputs",
+  "expected": [
+   "3"
+  ]
+ },
+ {
+  "id": "code_18",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(max([2, 5, 1])) outputs",
+  "expected": [
+   "5"
+  ]
+ },
+ {
+  "id": "code_19",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(min([4, 2, 8])) outputs",
+  "expected": [
+   "2"
+  ]
+ },
+ {
+  "id": "code_20",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(sum([1, 2, 3])) outputs",
+  "expected": [
+   "6"
+  ]
+ },
+ {
+  "id": "code_21",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(sorted([3, 1, 2])[0]) outputs",
+  "expected": [
+   "1"
+  ]
+ },
+ {
+  "id": "code_22",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(len('abc')) outputs",
+  "expected": [
+   "3"
+  ]
+ },
+ {
+  "id": "code_23",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(1 == 1) outputs",
+  "expected": [
+   "True"
+  ]
+ },
+ {
+  "id": "code_24",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(1 == 2) outputs",
+  "expected": [
+   "False"
+  ]
+ },
+ {
+  "id": "code_25",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(int('7')) outputs",
+  "expected": [
+   "7"
+  ]
+ },
+ {
+  "id": "code_26",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(str(3)) outputs",
+  "expected": [
+   "3"
+  ]
+ },
+ {
+  "id": "code_27",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(bool(0)) outputs",
+  "expected": [
+   "False"
+  ]
+ },
+ {
+  "id": "code_28",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(bool(1)) outputs",
+  "expected": [
+   "True"
+  ]
+ },
+ {
+  "id": "code_29",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print(type(1) is int) outputs",
+  "expected": [
+   "True"
+  ]
+ },
+ {
+  "id": "code_30",
+  "category": "code",
+  "prompt": "print('a') outputs a. print('b') outputs b. print('a' + 'b') outputs",
+  "expected": [
+   "ab"
+  ]
+ },
+ {
+  "id": "defi_01",
+  "category": "definition",
+  "prompt": "up is the opposite of down. left is the opposite of right. hot is the opposite of",
+  "expected": [
+   "cold"
+  ]
+ },
+ {
+  "id": "defi_02",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. left is the opposite of right. up is the opposite of",
+  "expected": [
+   "down"
+  ]
+ },
+ {
+  "id": "defi_03",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. left is the opposite of",
+  "expected": [
+   "right"
+  ]
+ },
+ {
+  "id": "defi_04",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. big is the opposite of",
+  "expected": [
+   "small"
+  ]
+ },
+ {
+  "id": "defi_05",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. fast is the opposite of",
+  "expected": [
+   "slow"
+  ]
+ },
+ {
+  "id": "defi_06",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. day is the opposite of",
+  "expected": [
+   "night"
+  ]
+ },
+ {
+  "id": "defi_07",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. open is the opposite of",
+  "expected": [
+   "closed"
+  ]
+ },
+ {
+  "id": "defi_08",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. young is the opposite of",
+  "expected": [
+   "old"
+  ]
+ },
+ {
+  "id": "defi_09",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. wet is the opposite of",
+  "expected": [
+   "dry"
+  ]
+ },
+ {
+  "id": "defi_10",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. full is the opposite of",
+  "expected": [
+   "empty"
+  ]
+ },
+ {
+  "id": "defi_11",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. hard is the opposite of",
+  "expected": [
+   "soft"
+  ]
+ },
+ {
+  "id": "defi_12",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. light is the opposite of",
+  "expected": [
+   "dark"
+  ]
+ },
+ {
+  "id": "defi_13",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. near is the opposite of",
+  "expected": [
+   "far"
+  ]
+ },
+ {
+  "id": "defi_14",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. early is the opposite of",
+  "expected": [
+   "late"
+  ]
+ },
+ {
+  "id": "defi_15",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. tall is the opposite of",
+  "expected": [
+   "short"
+  ]
+ },
+ {
+  "id": "defi_16",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. rich is the opposite of",
+  "expected": [
+   "poor"
+  ]
+ },
+ {
+  "id": "defi_17",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. strong is the opposite of",
+  "expected": [
+   "weak"
+  ]
+ },
+ {
+  "id": "defi_18",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. clean is the opposite of",
+  "expected": [
+   "dirty"
+  ]
+ },
+ {
+  "id": "defi_19",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. safe is the opposite of",
+  "expected": [
+   "dangerous"
+  ]
+ },
+ {
+  "id": "defi_20",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. true is the opposite of",
+  "expected": [
+   "false"
+  ]
+ },
+ {
+  "id": "defi_21",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. yes is the opposite of",
+  "expected": [
+   "no"
+  ]
+ },
+ {
+  "id": "defi_22",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. white is the opposite of",
+  "expected": [
+   "black"
+  ]
+ },
+ {
+  "id": "defi_23",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. summer is the opposite of",
+  "expected": [
+   "winter"
+  ]
+ },
+ {
+  "id": "defi_24",
+  "category": "definition",
+  "prompt": "hot is the opposite of cold. up is the opposite of down. first is the opposite of",
+  "expected": [
+   "last"
+  ]
+ },
+ {
+  "id": "defi_25",
+  "category": "definition",
+  "prompt": "Hot is the opposite of cold. Up is the opposite of down. The sun rises in the",
+  "expected": [
+   "east"
+  ]
+ },
+ {
+  "id": "defi_26",
+  "category": "definition",
+  "prompt": "Hot is the opposite of cold. Up is the opposite of down. The sun sets in the",
+  "expected": [
+   "west"
+  ]
+ },
+ {
+  "id": "defi_27",
+  "category": "definition",
+  "prompt": "Hot is the opposite of cold. Up is the opposite of down. Water freezes at",
+  "expected": [
+   "0"
+  ]
+ },
+ {
+  "id": "defi_28",
+  "category": "definition",
+  "prompt": "Hot is the opposite of cold. Up is the opposite of down. A triangle has",
+  "expected": [
+   "three"
+  ]
+ },
+ {
+  "id": "defi_29",
+  "category": "definition",
+  "prompt": "Hot is the opposite of cold. Up is the opposite of down. A square has",
+  "expected": [
+   "four"
+  ]
+ },
+ {
+  "id": "defi_30",
+  "category": "definition",
+  "prompt": "Hot is the opposite of cold. Up is the opposite of down. A week has",
+  "expected": [
+   "seven"
+  ]
+ },
+ {
+  "id": "cont_01",
+  "category": "continuation",
+  "prompt": "Roses are red, violets are blue. Twinkle, twinkle, little star. The quick brown fox jumps over the lazy",
+  "expected": [
+   "dog"
+  ]
+ },
+ {
+  "id": "cont_02",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Twinkle, twinkle, little star. Roses are red, violets are",
+  "expected": [
+   "blue"
+  ]
+ },
+ {
+  "id": "cont_03",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Twinkle, twinkle, little",
+  "expected": [
+   "star"
+  ]
+ },
+ {
+  "id": "cont_04",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. To be or not to be, that is the",
+  "expected": [
+   "question"
+  ]
+ },
+ {
+  "id": "cont_05",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Mary had a little",
+  "expected": [
+   "lamb"
+  ]
+ },
+ {
+  "id": "cont_06",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. The cat sat on the",
+  "expected": [
+   "mat"
+  ]
+ },
+ {
+  "id": "cont_07",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Happy birthday to",
+  "expected": [
+   "you"
+  ]
+ },
+ {
+  "id": "cont_08",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Row, row, row your",
+  "expected": [
+   "boat"
+  ]
+ },
+ {
+  "id": "cont_09",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Jack and Jill went up the",
+  "expected": [
+   "hill"
+  ]
+ },
+ {
+  "id": "cont_10",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Humpty Dumpty sat on a",
+  "expected": [
+   "wall"
+  ]
+ },
+ {
+  "id": "cont_11",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Baa, baa, black",
+  "expected": [
+   "sheep"
+  ]
+ },
+ {
+  "id": "cont_12",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Old MacDonald had a",
+  "expected": [
+   "farm"
+  ]
+ },
+ {
+  "id": "cont_13",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. The itsy bitsy",
+  "expected": [
+   "spider"
+  ]
+ },
+ {
+  "id": "cont_14",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. London Bridge is falling",
+  "expected": [
+   "down"
+  ]
+ },
+ {
+  "id": "cont_15",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Jingle bells, jingle",
+  "expected": [
+   "bells"
+  ]
+ },
+ {
+  "id": "cont_16",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. We wish you a merry",
+  "expected": [
+   "Christmas"
+  ]
+ },
+ {
+  "id": "cont_17",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. I'm a little teapot, short and",
+  "expected": [
+   "stout"
+  ]
+ },
+ {
+  "id": "cont_18",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Hey diddle diddle, the cat and the",
+  "expected": [
+   "fiddle"
+  ]
+ },
+ {
+  "id": "cont_19",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Little Miss Muffet sat on a",
+  "expected": [
+   "tuffet"
+  ]
+ },
+ {
+  "id": "cont_20",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Peter Piper picked a peck of pickled",
+  "expected": [
+   "peppers"
+  ]
+ },
+ {
+  "id": "cont_21",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. She sells sea shells by the sea",
+  "expected": [
+   "shore"
+  ]
+ },
+ {
+  "id": "cont_22",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. The rain in Spain stays mainly in the",
+  "expected": [
+   "plain"
+  ]
+ },
+ {
+  "id": "cont_23",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. A journey of a thousand miles begins with a single",
+  "expected": [
+   "step"
+  ]
+ },
+ {
+  "id": "cont_24",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. All that glitters is not",
+  "expected": [
+   "gold"
+  ]
+ },
+ {
+  "id": "cont_25",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Actions speak louder than",
+  "expected": [
+   "words"
+  ]
+ },
+ {
+  "id": "cont_26",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Better late than",
+  "expected": [
+   "never"
+  ]
+ },
+ {
+  "id": "cont_27",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Practice makes",
+  "expected": [
+   "perfect"
+  ]
+ },
+ {
+  "id": "cont_28",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. Where there's a will there's a",
+  "expected": [
+   "way"
+  ]
+ },
+ {
+  "id": "cont_29",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. The early bird catches the",
+  "expected": [
+   "worm"
+  ]
+ },
+ {
+  "id": "cont_30",
+  "category": "continuation",
+  "prompt": "The quick brown fox jumps over the lazy dog. Roses are red, violets are blue. The grass is always greener on the other",
+  "expected": [
+   "side"
+  ]
+ }
+]

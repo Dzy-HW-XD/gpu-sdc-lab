@@ -1,0 +1,15 @@
+{
+  "n_rows": 6400,
+  "n_fault": 4800,
+  "n_sham": 1200,
+  "n_clean": 400,
+  "n_clean_repeat": 0,
+  "clean_repeat_mismatches": 0,
+  "sham_char_sim_mismatches": 0,
+  "fault_bitdiff_not_one": 0,
+  "outputs": [
+    "runs_all.csv",
+    "runs_qwen05b.csv",
+    "runs_qwen15b.csv"
+  ]
+}
