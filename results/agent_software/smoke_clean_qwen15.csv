@@ -1,0 +1,13 @@
+model,case_id,category,condition,stage,layer,bit,position,prompt_tokens,pos,head,key_pos,elem,old,new,bit_diff,fault_value,clean_output,output,expected,clean_correct,fault_correct,char_sim,literal_garble,semantic_wrong,catastrophic,partial,preserved
+Qwen/Qwen2.5-1.5B-Instruct,policy_001,policy_qa,clean,,,,,1281,,,,,,,,,120,120,120,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,policy_002,policy_qa,clean,,,,,1281,,,,,,,,,200,200,200,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,policy_003,policy_qa,clean,,,,,1281,,,,,,,,,60,60,60,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,policy_004,policy_qa,clean,,,,,1277,,,,,,,,,5,5,5,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,tool_001,tool_routing,clean,,,,,1070,,,,,,,,,reset_mfa(user_id),reset_mfa(user_id),reset_mfa,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,tool_002,tool_routing,clean,,,,,1070,,,,,,,,,refund_order,refund_order,refund_order,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,tool_003,tool_routing,clean,,,,,1069,,,,,,,,,unlock_account,unlock_account,unlock_account,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,tool_004,tool_routing,clean,,,,,1068,,,,,,,,,get_invoice(),get_invoice(),get_invoice,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,api_001,api_lookup,clean,,,,,994,,,,,,,,,/v2/orders/{id}/status,/v2/orders/{id}/status,/v2/orders/{id}/status,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,api_002,api_lookup,clean,,,,,993,,,,,,,,,/v2/customers/{id},/v2/customers/{id},/v2/customers/{id},1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,api_003,api_lookup,clean,,,,,993,,,,,,,,,POST /v2/refunds,POST /v2/refunds,/v2/refunds,1,1,1.0,0,,,,
+Qwen/Qwen2.5-1.5B-Instruct,api_004,api_lookup,clean,,,,,992,,,,,,,,,/v2/invoices,/v2/invoices,/v2/invoices,1,1,1.0,0,,,,

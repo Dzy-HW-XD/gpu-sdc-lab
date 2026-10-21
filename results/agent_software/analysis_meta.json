@@ -1,0 +1,12 @@
+{
+  "n_rows": 6504,
+  "n_fault": 5832,
+  "n_clean": 24,
+  "n_sham": 648,
+  "clean_correct": 24,
+  "sham_correct": 648,
+  "fault_bitdiff_one": 5832,
+  "fault_old_present": 5832,
+  "fault_value_nonfinite": 248,
+  "fault_empty_output": 3
+}
