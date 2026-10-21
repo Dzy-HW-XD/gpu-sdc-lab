@@ -88,6 +88,18 @@ clean-correct prompt 数：
 | Qwen2.5-0.5B | 23 / 24 |
 | Qwen2.5-1.5B | 24 / 24 |
 
+按类别的 clean-correct 分布：
+
+| 模型 | factual | arithmetic | list | code | definition | continuation | 合计 |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Pythia-160M | 3/4 | 0/4 | 3/4 | 2/4 | 2/4 | 1/4 | 11/24 |
+| Pythia-410M | 4/4 | 0/4 | 4/4 | 3/4 | 4/4 | 2/4 | 17/24 |
+| Pythia-1B | 4/4 | 2/4 | 4/4 | 2/4 | 4/4 | 4/4 | 20/24 |
+| Qwen2.5-0.5B | 4/4 | 4/4 | 4/4 | 4/4 | 3/4 | 4/4 | 23/24 |
+| Qwen2.5-1.5B | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 | 24/24 |
+
+这张表说明：**Pythia-160M/410M 的 arithmetic 基线确实很弱，Pythia-160M 的 continuation 也只有 1/4；但 Qwen2.5-0.5B/1.5B 基本能正确回答这些问题。** 因此不能简单说“所有模型本身都不会答”。
+
 ### 1.3 注错输入
 
 注错对象是 decoder block 输入的 **residual-stream activation**，不是权重。
@@ -276,7 +288,25 @@ clean-correct prompt 数：
 - `wrong` 与 `catastrophic` 几乎重合，说明主要失败是答案丢失，而不是编码层乱码。
 - Qwen2.5-0.5B 的 literal garble 最高（12/288 = 4.2%）。
 
-### 4.2 按 bit 聚合
+### 4.2 绝对正确率：把 clean 本来答错的 prompt 也算进来
+
+`catastrophic rate` 只用 clean-correct prompt 作分母；如果关心“模型面对全部 24 条 prompt 时到底有多少输出正确”，应看绝对正确率：
+
+| 模型 | clean 正确 | clean 正确率 | fault 正确（全部 288 runs） | fault 正确率 | 变化 |
+|---|---:|---:|---:|---:|---:|
+| Pythia-160M | 11/24 | 45.8% | 83/288 | 28.8% | −17.0 pp |
+| Pythia-410M | 17/24 | 70.8% | 158/288 | 54.9% | −16.0 pp |
+| Pythia-1B | 20/24 | 83.3% | 184/288 | 63.9% | −19.4 pp |
+| Qwen2.5-0.5B | 23/24 | 95.8% | 177/288 | 61.5% | −34.4 pp |
+| Qwen2.5-1.5B | 24/24 | 100.0% | 226/288 | 78.5% | −21.5 pp |
+
+说明：
+
+- `fault 正确率` 按每个模型全部 288 个 fault run 统计；每条 prompt 被 12 个（3 层 × 4 bit）条件重复，因此是条件平均后的绝对正确率。
+- 这个口径包含 clean 本来答错的 prompt，也允许注错后“碰巧答对”，所以不能替代 paired 的 catastrophic 统计；它回答的是另一个问题：**端到端输出正确率是多少**。
+- 对 Pythia-160M，clean 只有 45.8% 正确，fault 后 28.8% 正确；它本身的基线确实很弱。对 Qwen2.5-1.5B，clean 是 24/24，fault 后仍有 78.5% 正确，说明基线不是“不会答”，而是注错造成了真实退化。
+
+### 4.3 按 bit 聚合
 
 单元格为 catastrophic rate；每个模型每个 bit 聚合 E/M/L 三层。
 
@@ -290,7 +320,7 @@ clean-correct prompt 数：
 
 聚合后 bit 28/29 通常比 bit 30/31 更危险，但这不是逐层规律：bit 30 在 early 层很强，bit 30/31 在 late 层常常完全无效。
 
-### 4.3 按深度聚合
+### 4.4 按深度聚合
 
 | 模型 | E | M | L |
 |---|---:|---:|---:|
@@ -304,7 +334,7 @@ clean-correct prompt 数：
 - Pythia-160M 的 early 层被 bit 30/31 拉高，总体与 middle 接近。
 - Qwen2.5-1.5B 的 early 层最稳，middle/late 也较低。
 
-### 4.4 关键 layer × bit 组合
+### 4.5 关键 layer × bit 组合
 
 | 组合 | catastrophic | 说明 |
 |---|---:|---|
@@ -409,6 +439,7 @@ Sham 和 clean 重复说明 hook 本身没有副作用；fault 值 finite 说明
 - 每个条件只翻转**一个元素、一个 bit、最后一个 prompt token**；没有多元素、多 token、连续 bit 翻转。
 - 只做 activation 注入，没有权重、KV-cache 或 attention head 注入。
 - 每个模型只有 24 条 prompt；Pythia-160M 只有 11 条 clean-correct，模型间比较的置信区间较宽。
+- **模型间的 catastrophic rate 不能直接当作鲁棒性排名**：分母和题目子集不同。Pythia-160M 的 41.7% 只基于 11 条它能答的 prompt；Qwen2.5-1.5B 的 24.7% 基于 24 条。绝对正确率表（4.2 节）是更完整的端到端视角。
 - 规则化答案匹配不能完全替代人工/LLM judge；格式改变会被归为 partial，但边界仍有主观性。
 - 仅 greedy decoding；没有采样、beam search 或多轮对话。
 - 共享 A100 上运行，未做严格的吞吐/延迟测量。
