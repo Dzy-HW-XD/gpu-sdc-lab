@@ -1,0 +1,65 @@
+{
+ "qkv_q": {
+  "order": 126,
+  "index": 1219,
+  "name": "ampere_bf16_s16816gemm_bf16_128x256_ldg8_relu_f2f_stages_64x3_tn",
+  "ctas": 108,
+  "mma": 84934656
+ },
+ "qkv_k": {
+  "order": 127,
+  "index": 1220,
+  "name": "ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x4_tn",
+  "ctas": 72,
+  "mma": 14155776
+ },
+ "qkv_v": {
+  "order": 128,
+  "index": 1221,
+  "name": "ampere_bf16_s16816gemm_bf16_128x64_ldg8_relu_f2f_stages_64x4_tn",
+  "ctas": 72,
+  "mma": 14155776
+ },
+ "qk": {
+  "order": 129,
+  "index": 1238,
+  "name": "ampere_bf16_s1688gemm_bf16_256x128_ldg8_f2f_stages_32x1_tn",
+  "ctas": 1944,
+  "mma": 254803968
+ },
+ "pv": {
+  "order": 130,
+  "index": 1246,
+  "name": "ampere_bf16_s16816gemm_bf16_128x128_ldg8_f2f_stages_32x5_nn",
+  "ctas": 216,
+  "mma": 125632512
+ },
+ "wo": {
+  "order": 131,
+  "index": 1249,
+  "name": "ampere_bf16_s16816gemm_bf16_128x256_ldg8_f2f_stages_64x3_tn",
+  "ctas": 108,
+  "mma": 84934656
+ },
+ "mlp_gate": {
+  "order": 132,
+  "index": 1261,
+  "name": "ampere_bf16_s16816gemm_bf16_128x256_ldg8_f2f_stages_64x3_tn",
+  "ctas": 630,
+  "mma": 495452160
+ },
+ "mlp_up": {
+  "order": 133,
+  "index": 1263,
+  "name": "ampere_bf16_s16816gemm_bf16_128x256_ldg8_f2f_stages_64x3_tn",
+  "ctas": 630,
+  "mma": 495452160
+ },
+ "mlp_down": {
+  "order": 134,
+  "index": 1265,
+  "name": "ampere_bf16_s16816gemm_bf16_128x256_ldg8_f2f_stages_64x3_tn",
+  "ctas": 108,
+  "mma": 495452160
+ }
+}

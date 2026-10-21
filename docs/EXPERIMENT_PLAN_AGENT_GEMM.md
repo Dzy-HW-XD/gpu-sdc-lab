@@ -1,7 +1,14 @@
 # Long-context agent GEMM fault-injection plan (NVBitFI)
 
-Status: **design proposal, not executed**.  
+Status: **design proposal, Phase 0 executed and passed; Phase 1 pending**.  
 Confirmed choices: Qwen Instruct ×2; 12-case pilot; add Wo/MLP; **NVBitFI injection during prefill**.
+
+> **Phase 0 result (2026-10-21):** Qwen1.5B-Instruct, 2,264-token case, clean answer `120`.
+> Profile found exactly **253 MMA kernels = 28 layers × 9 GEMMs + LM head**. NVBitFI successfully
+> injected bit 30 into layer-14 `qkv_v` (kernel index 1221, mask `0x40000000`); output became
+> `!!!!!!!!!!!!!!!!`. Other tested stage/bit points were masked. Single injection costs
+> **~7–13 min** with NVBitFI; the original 1,944-run matrix would take ~9 days on one GPU.
+> See `docs/PHASE0_AGENT_NVBITFI.md` for full evidence and the Phase-1 redesign options.
 
 ## 1. 实验目标
 
