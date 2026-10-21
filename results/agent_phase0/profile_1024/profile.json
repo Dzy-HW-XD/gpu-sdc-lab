@@ -1,0 +1,15 @@
+{
+ "case_id": "policy_001_1024",
+ "category": "policy_qa",
+ "model": "Qwen/Qwen2.5-1.5B-Instruct",
+ "mode": "profile",
+ "prompt_tokens": 1002,
+ "expected_answer": "120",
+ "max_new_tokens": 16,
+ "prefill_logits_shape": [
+  1,
+  1003
+ ],
+ "elapsed_s": 88.471,
+ "max_mem_mib": 3139.8
+}

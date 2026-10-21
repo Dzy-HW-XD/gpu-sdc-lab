@@ -167,7 +167,35 @@ Layer 14（M）的实际 global kernel index：
 - 单次注入可能从 7 分钟降到 2–3 分钟；
 - 但仍不是“很长专有内容”，agent 场景真实性下降。
 
-## 8. 产物
+## 8. 1024-token follow-up
+
+把同一个 policy case 的 system context 缩到 **1,002 prompt tokens**（含 chat template）后，重新做 clean、profile 和 qkv_v bit30 注入。
+
+| 项目 | 2,264 tokens | 1,002 tokens |
+|---|---:|---:|
+| clean 输出 | `120` | `120` |
+| clean 耗时 | 0.815 s | 0.564 s |
+| profile 耗时 | 160.9 s | **88.5 s** |
+| profile MMA kernel 数 | 253 | 253 |
+| qkv_v kernel | `128x64 ...` | `64x64_sliced ...` |
+| qkv_v MMA 数 | 14,155,776 | 6,291,456 |
+| qkv_v bit30 输出 | `!!!!!!!!!!!!!!!!` | `!!!!!!!!!!!!!!!!` |
+| 单次注入耗时 | 769 s | **826.8 s** |
+
+结论：
+
+- 缩短到 1,002 token 后，**clean 和 profile 明显变快**；
+- 但 **NVBitFI 注入没有变快**，反而略慢；
+- 原因是 1,002-token 的 qkv_v 选择了不同的 `64x64_sliced` kernel，NVBitFI 的插桩开销没有随 token 数线性下降，且共享 GPU 有明显波动；
+- 所以“缩短上下文”不能解决 NVBitFI 全矩阵的成本问题。
+
+1024-token 版本的 clean/profile/injection 数据在：
+
+`results/agent_phase0/clean_1024.json`  
+`results/agent_phase0/profile_1024/`  
+`results/agent_phase0/inject_1024_qkv_v/`
+
+## 9. 产物
 
 - 报告：`docs/PHASE0_AGENT_NVBITFI.md`
 - 计划：`docs/EXPERIMENT_PLAN_AGENT_GEMM.md`

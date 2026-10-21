@@ -8,6 +8,8 @@ Confirmed choices: Qwen Instruct ×2; 12-case pilot; add Wo/MLP; **NVBitFI injec
 > injected bit 30 into layer-14 `qkv_v` (kernel index 1221, mask `0x40000000`); output became
 > `!!!!!!!!!!!!!!!!`. Other tested stage/bit points were masked. Single injection costs
 > **~7–13 min** with NVBitFI; the original 1,944-run matrix would take ~9 days on one GPU.
+> A 1,002-token variant made profile faster (160.9 s → 88.5 s) but injection was not faster
+> (769 s → 826.8 s), so shortening the context does not solve the NVBitFI cost problem.
 > See `docs/PHASE0_AGENT_NVBITFI.md` for full evidence and the Phase-1 redesign options.
 
 ## 1. 实验目标

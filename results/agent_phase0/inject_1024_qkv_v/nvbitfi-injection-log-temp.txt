@@ -1,0 +1,15 @@
+inspecting: ampere_bf16_s16816gemm_bf16_64x64_sliced1x2_ldg8_relu_f2f_stages_64x6_tn
+num_static_instrs: 832
+maxregs: 146(146)
+Injection data
+index: 1221
+kernel_name: ampere_bf16_s16816gemm_bf16_64x64_sliced1x2_ldg8_relu_f2f_stages_64x6_tn
+ctas: 64
+instrs: 22983488
+ grp 0: 0 grp 1: 7016640 grp 2: 145152 grp 3: 2017664 grp 4: 1123072 grp 5: 6452864 grp 6: 0 grp 7: 6228096 grp 8: 21860416 grp 9: 19842752
+mask: 0x40000000
+beforeVal: 0x3e71abe7;afterVal: 0x7e71abe7
+regNo: 2
+opcode: HMMA
+pcOffset: 0x17b0
+tid: 4759

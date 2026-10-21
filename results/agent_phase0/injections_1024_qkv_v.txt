@@ -1,0 +1,7 @@
+7
+0
+ampere_bf16_s16816gemm_bf16_64x64_sliced1x2_ldg8_relu_f2f_stages_64x6_tn
+1221
+3145728
+0.5000000000
+0.9531250000
