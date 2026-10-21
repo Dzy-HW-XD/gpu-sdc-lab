@@ -276,4 +276,5 @@ Links:
 - [docs/REPORT_HIGHBIT_OUTPUT.md](docs/REPORT_HIGHBIT_OUTPUT.md) — high-bit output-corruption pilot
 - [docs/REPORT_HIGHBIT_OUTPUT_200.md](docs/REPORT_HIGHBIT_OUTPUT_200.md) — strict clean 200-prompt Qwen experiment
 - [docs/TEST_REPORT_HIGHBIT_OUTPUT_200.md](docs/TEST_REPORT_HIGHBIT_OUTPUT_200.md) — high-bit 200-prompt test report
+- [docs/EXPERIMENT_PLAN_AGENT_GEMM.md](docs/EXPERIMENT_PLAN_AGENT_GEMM.md) — long-context agent GEMM injection plan
 - [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — scalar GEMM archive
