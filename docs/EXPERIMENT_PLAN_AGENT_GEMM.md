@@ -1,215 +1,296 @@
-# Long-context agent GEMM fault-injection plan
+# Long-context agent GEMM fault-injection plan (NVBitFI)
 
 Status: **design proposal, not executed**.  
-Scope: long proprietary prefill → agent answer → GEMM-output bit injection.  
-Reference: `047_attn_5gemm_full` (five attention GEMM stages, bits 24–30, early/middle/late positions, random head).
+Confirmed choices: Qwen Instruct ×2; 12-case pilot; add Wo/MLP; **NVBitFI injection during prefill**.
 
-## 1. What changes from the previous experiment
+## 1. 实验目标
 
-| 项目 | 上一版 | 新实验 |
+模拟 agent 对话的第一次长 prefill：
+
+1. system 中放入很长的专有内容（内部政策、工具目录、API 文档、干扰段落）；
+2. user 提问，要求依据这些内容给出短答案；
+3. 在 **prefill 的 GEMM 内部**用 NVBitFI 翻转一个 bit（28/29/30）；
+4. decode 回答，判断答案是否仍正确，以及是否出现乱码或完全错误。
+
+与上一版的区别：
+
+| 项目 | 上一版 | 本实验 |
 |---|---|---|
-| 输入 | 24 条短 prompt | 12–24 条长上下文 agent 场景 |
-| 注入位置 | 最后一个 prompt token 的 residual activation | GEMM 输出元素 |
-| 注入 bit | 28–31 | **28–30** |
-| 注入阶段 | 任意 block 输入 | **QKV_Q / QKV_K / QKV_V / QK / PV** |
-| 注入位置 | 最后一个 prompt token | 长 prefill 内的 early / middle / late token |
-| 目标 | 输出是否乱码/错误 | agent 任务答案是否被破坏 + 输出形态 |
+| 输入 | 短 prompt | 1,500–3,000 token 的长专有上下文 |
+| 注入位置 | 最后一个 prompt token 的 residual activation | **GEMM 内部 HMMA 目的寄存器** |
+| 注入 bit | 28–31 | **28, 29, 30** |
+| 注入阶段 | block 输入 | QKV_Q / QKV_K / QKV_V / QK / PV / Wo / MLP |
+| 注入时机 | 最后一个 token | 第一次 prefill，长上下文内的 GEMM |
+| 注入工具 | 软件 hook | **NVBitFI** |
 
-新实验不再只打最后一个 token，而是模拟：**很长的 system/proprietary context + user query 一次 prefill，随后回答**。
+## 2. Agent 数据集
 
-## 2. Agent 场景与数据集
-
-### 2.1 对话形式
-
-每个 case 固定为一次 prefill：
+### 2.1 对话格式
 
 ```
-system: 很长的专有内容（内部政策、工具目录、API 文档、产品/价格表、干扰信息）
-user:   一个需要依据上述内容回答的问题
-assistant: 短答案（金额、工具名、endpoint、参数或 JSON）
+system:
+  你是一个内部支持 agent。只能依据下面的专有资料回答。
+  [很长的内部政策 / 工具目录 / API 文档 / 价格表 / 干扰段落]
+
+user:
+  [一个需要依据专有内容回答的问题]
+
+assistant:
+  [短答案，例如金额、工具名、endpoint、参数或 JSON]
 ```
 
-- 专有内容是**合成的内部资料**，不使用真实公司数据。
-- 目标答案在 clean 输出开头，便于严格判定。
-- 长上下文目标长度：**1,500–3,000 tokens**；Qwen2.5 支持 32k 上下文。
-- 采用 Qwen chat template；注入发生在第一次 prefill，decode 不再注错。
+- 合成“专有内容”，不使用真实公司数据。
+- 每个 case 有一个唯一可验证答案，答案放在输出开头。
+- 上下文长度目标：**1,500–3,000 tokens**。
+- 使用 Qwen chat template；注错只发生在第一次 prefill，decode 不再注错。
 
-### 2.2 数据集规模
+### 2.2 Pilot 数据量
 
-建议 **24 个 case**，每个 case 有唯一可验证答案：
+12 个 case，4 个/类：
 
-| 类别 | 数量 | 例子 | 目标答案 |
+| 类别 | 数量 | 查询 | 目标答案 |
 |---|---:|---|---|
-| policy QA | 8 | 内部退款政策中 Tier 2 损坏商品最高退多少？ | `120` |
-| tool routing | 8 | 用户要求重置 MFA，应调用哪个工具和参数？ | `reset_mfa(user_id="U-1042")` |
-| API lookup | 8 | 修改订单状态的 endpoint 是什么？ | `/v2/orders/{id}/status` |
+| policy QA | 4 | 某等级客户的最高退款/折扣/时限 | 金额或天数 |
+| tool routing | 4 | 某请求应调用哪个内部工具和参数 | 工具名 + 参数 |
+| API lookup | 4 | 修改/查询对象应使用哪个 endpoint | endpoint 字符串 |
 
-- 每个 case 的上下文包含唯一 fact 和多段干扰内容。
-- 8 个 policy + 8 个 tool + 8 个 API = 24。
-- Pilot 先用 12 个 case（每类 4 个），通过 clean 100% 后再扩到 24。
+后续扩到 24 个 case（每类 8 个）。
 
-### 2.3 Clean 门槛
+### 2.3 Clean 100% 门槛
 
-候选模型：
+模型：
 
 - `Qwen/Qwen2.5-0.5B-Instruct`
 - `Qwen/Qwen2.5-1.5B-Instruct`
 
-正式统计前必须满足：
+正式 fault 矩阵前必须满足：
 
-- 两个模型都在最终 case 集上 **clean 100%**（目标答案严格匹配）；
-- 如果 0.5B 无法达到 100%，只保留 1.5B，或简化 case；
-- 不把 clean 错题带入注错统计。
+- 两个模型在 12 个 case 上均 **clean 100%**；
+- 目标答案严格匹配（金额/endpoint/工具名 + 参数）；
+- 任何 clean 错题直接替换或删除，不进入统计；
+- 如果 0.5B 不能稳定达到 100%，只保留 1.5B。
 
-## 3. GEMM 注入模型
+### 2.4 数据格式
 
-### 3.1 五个 GEMM stage
+每个 case 一条 JSON：
 
-参考 047：
-
-| stage | LLM 中的位置 | 注入元素 |
-|---|---|---|
-| `qkv_q` | 某层 Q projection GEMM 输出 | 选定 token 的一个 hidden element |
-| `qkv_k` | 某层 K projection GEMM 输出 | 选定 token 的一个 hidden element |
-| `qkv_v` | 某层 V projection GEMM 输出 | 选定 token 的一个 hidden element |
-| `qk` | 某层某 head 的 QK^T score GEMM | 一个 (query token, key token) score |
-| `pv` | 某层某 head 的 P·V GEMM | 一个 (query token, value channel) 元素 |
-
-- **QKV** 是 projection-level fault，影响该 token 的整个 Q/K/V 向量；每次仍只翻转一个元素。
-- **QK/PV** 使用随机 head，和 047 的 random-head 设定对齐。
-- 第一轮只做这 5 个 GEMM；`Wo`、MLP up/down、LM head 作为后续扩展。
-
-### 3.2 Fault 参数
-
-| 参数 | 取值 |
+| 字段 | 含义 |
 |---|---|
-| 精度 | FP32 activation/GEMM 输出 |
-| bit | **28, 29, 30** |
-| 注入元素 | 每个 run 随机选择一个元素（固定 seed） |
-| 注入次数 | 每个 run 恰好 1 bit |
-| 注入时机 | 第一次 prefill |
-| 注入位置 | 长上下文内的 early / middle / late token |
-| 层 | E / M / L（每模型 3 层） |
-| 校验 | 注入前后 int32 XOR，恰好 1 bit |
+| `case_id` | 唯一 ID |
+| `category` | `policy_qa` / `tool_routing` / `api_lookup` |
+| `system_context` | 1.5–3k token 的专有资料 |
+| `user_query` | 用户问题 |
+| `expected_answer` | 严格答案 |
+| `answer_regex` | 可选，用于工具名/endpoint/JSON |
+| `context_tokens` | clean tokenizer 下的上下文长度 |
+| `difficulty` | 用于分层统计 |
 
-### 3.3 与 047 的对应关系
+构造规则：
 
-047 的故障模型是 **NVBitFI 在 HMMA destination register（FP32 accumulator）翻转一个 bit**，阶段为 `qkv_q/qkv_k/qkv_v/qk/pv`，位置为 early/middle/late。
+- 每个 case 的答案在专有内容中只出现一次；
+- 干扰段落包含相似术语，避免模型仅靠关键词命中；
+- 答案短、可精确判定；
+- 系统内容不含真实公司数据或密钥；
+- 12 个 pilot case 通过 clean gate 后再扩到 24。
 
-本实验先采用**软件 GEMM 输出注入**：
+## 3. NVBitFI 注入设计
 
-- 在 PyTorch 的 Q/K/V projection、QK^T、PV GEMM 输出上注入；
-- 注入一个 FP32 元素的 1 个 bit；
-- 对每个 run 验证 bit 数；
-- 保证长上下文和大量组合可复现。
+### 3.1 故障模型
 
-后续用 NVBitFI 对少量 stage/bit/层组合做**硬件验证**：
+对齐 047：
 
-- 验证软件 GEMM 注入与真实 HMMA destination-bit fault 的失败形态一致；
-- 不把全矩阵都放到 NVBitFI 上，避免长上下文 × 多阶段的运行成本。
+- NVBitFI `mma` 组；
+- 在 HMMA 的 **FP32 destination register / accumulator** 上翻转 1 个 bit；
+- bit：**28, 29, 30**；
+- 每个 run 只注入 1 次；
+- decode 不再注入。
 
-## 4. 注入位置与矩阵
+### 3.2 GEMM 阶段
 
-### 4.1 Token 位置
+第一轮包含 047 的五个阶段并加入 Wo/MLP：
 
-每个 case 的 prefill 包含：长 system/context + user query。  
-在 **context 内容**内选三个 token 位置：
+| stage | LLM 中的 GEMM | 说明 |
+|---|---|---|
+| `qkv_q` | Q projection | 每层一个 GEMM |
+| `qkv_k` | K projection | 每层一个 GEMM |
+| `qkv_v` | V projection | 每层一个 GEMM |
+| `qk` | QK^T score | eager attention，按层 |
+| `pv` | P·V | eager attention，按层 |
+| `wo` | attention output projection | 每层一个 GEMM |
+| `mlp_gate` | SwiGLU gate projection | 每层一个 GEMM |
+| `mlp_up` | SwiGLU up projection | 每层一个 GEMM |
+| `mlp_down` | MLP down projection | 每层一个 GEMM |
 
-- early：上下文约 10% 位置
-- middle：约 50%
-- late：约 90%
+**层：** E / M / L，每模型 3 层。
 
-不使用“最后一个 prompt token”作为唯一位置。QK/PV 的 query token 使用该位置；QKV 的注入 token 也使用该位置。
+### 3.3 长上下文中的位置
 
-### 4.2 Pilot 矩阵
+NVBitFI 通过动态指令序号选择 fault；在 047 中使用 early/middle/late instruction fraction。本实验同样记录：
 
-12 case pilot：
+- injection instruction fraction；
+- 对应 kernel 的 `kernel_count`；
+- 若可映射，记录大致 token 范围；
+- 不把“最后一个 prompt token”作为唯一位置。
+
+正式矩阵的三种位置：
+
+- early：GEMM instruction 范围前 1/3；
+- middle：中 1/3；
+- late：后 1/3。
+
+### 3.4 NVBitFI 与 HuggingFace 的接入
+
+需要一个专门的长上下文 agent workload，而不是 047 的 `attention_forward` 小程序：
+
+1. 读取 12 个 case；
+2. 用 Qwen chat template 拼 system + user；
+3. 做一次 prefill；
+4. 在 prefill 期间被 NVBitFI 注入；
+5. decode 短答案并写 JSON；
+6. 保存 clean/fault 输出和注入日志。
+
+关键工程点：
+
+- 必须使用 **eager attention** 或显式 Q/K/V matmul，避免 SDPA 把 QK/PV 融合成不可映射的 kernel。
+- 需要用 **NVTX range** 标出每层、每 stage；再用 PyTorch profiler / CUPTI 把 kernel launch 与 stage 对齐。
+- NVBitFI profile log 给出 kernel name、global index、mma 计数；将 stage/layer 映射到 `(kernel_name, kernel_count)`。
+- 每个 stage/layer 至少做一次“已知 fault 注入 → 输出变化”验证，确认映射没有错位。
+- 如果某个 stage 的 GEMM 被融合/拆成多个 kernel，先记录，不强行猜测；无法稳定映射的 stage 暂不进入正式矩阵。
+
+### 3.5 为什么先做 Phase 0
+
+NVBitFI 在 047 的自定义 CUDA workload 上已验证；但 HuggingFace Qwen 的 GEMM launch 顺序、cuBLAS kernel 名称和融合行为与 047 不同。正式跑矩阵前必须先验证：
+
+- 一次长 prefill 的 profile 中，能否识别出每层 9 个 GEMM；
+- 能否用 `(kernel_name, kernel_count)` 精确命中目标 layer/stage；
+- 一次 bit 28/29/30 注入是否真的 `Injection data`，且 clean 输出在无 fault 时不变；
+- 注入后是否仍能完成 decode，而不是进程崩溃。
+
+## 4. 运行矩阵
+
+### 4.1 Phase 0：NVBitFI 可行性
+
+| 项目 | 设置 |
+|---|---|
+| 模型 | Qwen2.5-1.5B-Instruct |
+| case | 1 个长上下文 case |
+| layer | M |
+| stage | qkv_q, qk, pv, wo, mlp_down |
+| bit | 30 |
+| 注入 | 1 次/组合 |
+| 目的 | 验证 kernel 映射、注入日志、decode 不崩 |
+
+通过标准：
+
+- profile 能定位目标 kernel；
+- 注入日志出现 `Injection data`；
+- fault 输出与 clean 不同或明确记录 masked；
+- 无 Python/CUDA 崩溃。
+
+### 4.2 Phase 1：12-case pilot
 
 | 因子 | 取值 |
 |---|---|
-| 模型 | Qwen2.5-0.5B-Instruct / 1.5B-Instruct |
+| 模型 | Qwen0.5B-Instruct / 1.5B-Instruct |
 | case | 12 |
-| 层 | E / M / L（3） |
-| stage | qkv_q / qkv_k / qkv_v / qk / pv（5） |
-| position | early / middle / late（3） |
+| layer | E / M / L（3） |
+| stage | 9（上表） |
 | bit | 28 / 29 / 30（3） |
+| position | 每 cell 1 个，early/middle/late 均匀分配并记录 |
 
-计算：
+fault 数：
 
-- fault：2 × 12 × 3 × 5 × 3 × 3 = **3,240**
-- sham：2 × 12 × 3 × 5 = **360**
-- clean：2 × 12 = **24**
-- 合计约 **3,624 个生成**
+**2 × 12 × 3 × 9 × 3 = 1,944**
 
-正式版扩到 24 case 后：
+控制：
 
-- fault：2 × 24 × 3 × 5 × 3 × 3 = **6,480**
-- 其他控制同比增加。
+- clean：2 × 12 = 24；
+- sham：2 × 12 × 3 × 9 = 648（不翻 bit，验证 hook/流程）；
+- 总计约 **2,616 个 prefill + decode**。
 
-### 4.3 控制
+### 4.3 Phase 2：位置与规模扩展
 
-- clean：每个 case 在每个模型上生成一次；
-- sham：安装 GEMM hook 但不翻 bit；每个模型每个 case × 3 层 × 5 stage；
-- 重复 clean：至少对 pilot 模型重复一次，确认 greedy 输出稳定；
-- 所有 fault run 记录 bit 改变数、注入值是否 finite、runtime error。
+Phase 1 通过后：
 
-## 5. 判定指标
+- 每个 cell 补 early/middle/late 三个 position；
+- fault 数变为 **2 × 12 × 3 × 9 × 3 × 3 = 5,832**；
+- 如需统计功效，再扩到 24 case。
 
-### 5.1 任务答案
+## 5. 输出与判定
 
-- **task correct**：目标答案/JSON 在答案开头严格匹配；
-- **answer wrong**：目标答案缺失或与 clean 不一致；
-- **JSON invalid**（tool/API 类）：不能解析为预期结构。
+### 5.1 每个 run 的输出
 
-### 5.2 输出形态
+- case_id, category, context_tokens
+- model, layer, stage, bit, position
+- kernel_name, kernel_count, inst_id, inst_fraction
+- mask, before_val, after_val, opcode, register/pc
+- injected / error_not_injected / kernel_error
+- clean_output, fault_output
+- task_correct, literal_garble, semantic_wrong, catastrophic, partial, preserved
+- runtime_error / finite checks
+
+### 5.2 任务答案
+
+- **task correct**：金额/工具名/endpoint/JSON 严格匹配；
+- **wrong**：答案缺失、错误或 JSON 无效；
+- 只对 clean 100% 的 case 统计。
+
+### 5.3 输出形态
 
 沿用上一版：
 
-- **literal garble**：替换字符、控制字符、空输出、退化重复、异常书写系统；
-- **semantic wrong**：答案缺失、char similarity < 0.4、clean PPL ratio > 5；
-- **catastrophic**：literal garble 或 semantic wrong；
-- **partial / preserved**：答案仍出现但被改写，或完全保持。
+- literal garble：替换字符、控制字符、空输出、退化重复、异常书写系统；
+- semantic wrong：答案缺失、char similarity < 0.4、clean PPL ratio > 5；
+- catastrophic：literal garble 或 semantic wrong；
+- partial / preserved。
 
-### 5.3 GEMM 局部效应
+### 5.4 GEMM 局部效应
 
-对每个 run 额外记录：
+可选记录：
 
-- 注入 stage/层/head/位置的 local delta；
-- 下游 GEMM 输出是否超过 047 的 L4 阈值（`|Δ| > 1e-4 + 1e-3|ref|`）；
-- 受影响的最大层和 token 后缀；
-- 用于比较“局部数值异常”与“最终答案错误”。
+- 注入 kernel 的 HMMA bit 数据；
+- 后续层输出是否超过 047 的 L4 阈值；
+- 受影响的最大层/token；
+- 用于解释“局部数值错误 → 最终答案错误”的传播。
 
-## 6. 输出与图
-
-每个 run 的 CSV 至少包含：
-
-- case_id, category, context_tokens
-- model, layer, stage, bit, position, token_index, head, element_index
-- old_int, new_int, bit_diff, fault_value, fault_finite
-- clean_output, fault_output
-- task_correct, literal_garble, semantic_wrong, catastrophic, partial, preserved
-- local_l4_affected, downstream_l4_layers, runtime_error
+## 6. 图与报告
 
 一张总结图：
 
-- **(a)** stage × bit 的 catastrophic rate；
+- **(a)** stage × bit 的 catastrophic rate（两个模型）；
 - **(b)** stage × layer（bit 28–30 合并）；
 - **(c)** early/middle/late position 的 catastrophic rate，或 outcome composition。
 
-## 7. 主要风险
+报告至少包含：
 
-1. **长上下文 clean 100% 难**：0.5B 可能无法稳定检索；先用 Instruct、唯一 fact、短答案，并做 clean gate。
-2. **GEMM hook 实现复杂**：Qwen 默认 SDPA，需要改成 explicit eager attention 才能注入 QK/PV；必须用 clean 输出验证 hook 无副作用。
-3. **bit 28–30 可能被 masked**：同一层/stage 的某些元素可能完全不影响答案；需要按 stage/位置分层报告，而不是只看平均。
-4. **NVBitFI 与软件注入不完全等价**：先软件全矩阵，后用 NVBitFI 做小规模硬件验证。
-5. **长上下文运行成本**：12-case pilot 先行；clean 100% 和 hook 验证通过后再扩 24。
-6. **Agent 答案格式**：tool/API 类要明确 JSON/字段；否则 0.5B 容易格式错误，clean gate 过不了。
+- 长上下文 dataset 统计；
+- clean 100% 证明；
+- NVBitFI kernel 映射表；
+- 注入日志核验；
+- stage/bit/layer/position 结果；
+- 典型乱码/错误/保持样本；
+- 与 047 的对应关系和差异。
 
-## 8. 待确认
+## 7. 风险
 
-1. 模型：`Qwen2.5-0.5B-Instruct` + `1.5B-Instruct`（推荐），还是继续 base？
-2. Pilot 规模：12 case（推荐）还是直接 24 case？
-3. GEMM stage：仅 047 的 5 个 stage（推荐），还是加 `Wo` / MLP？
-4. 注入实现：软件 GEMM 全矩阵 + NVBitFI 小规模验证（推荐），还是全部 NVBitFI？
+1. **Kernel 映射是最大风险**：Qwen 的 GEMM 可能被 cuBLAS/inductor 融合或拆成多个 kernel。Phase 0 必须先证明能按 layer/stage 命中。
+2. **NVBitFI 长上下文开销**：每次 run 都要重新 prefill 1.5–3k token；5,832 次会非常慢。先跑 1,944 次 pilot。
+3. **0.5B clean 100% 难**：长上下文检索和工具格式可能失败；clean gate 不过就只保留 1.5B。
+4. **QK/PV 可能不走独立 GEMM**：必须显式 eager attention；如果仍然融合，暂不纳入 QK/PV，或改用可注入的自定义 attention。
+5. **bit 28–30 可能被 masked**：同一 stage 的某些 HMMA 元素不影响 answer；需要按 stage/position 分层统计。
+6. **NVBitFI 注入结果不稳定**：需要重复 clean/sham 和已知 fault 验证；不能把 crash 当作普通 SDC。
 
-确认后先做 **12-case clean 校准和 hook 自测**，通过后再跑 fault 矩阵。
+## 8. 已确认 / 待确认
+
+已确认：
+
+- 模型：Qwen2.5-0.5B-Instruct + 1.5B-Instruct；
+- 规模：12-case pilot；
+- stage：047 五个 + Wo + MLP（9 个）；
+- 注入：NVBitFI，prefill，bits 28–30，decode 看回答质量。
+
+待确认：
+
+- QK/PV 若无法用 NVBitFI 稳定命中，是否允许暂时只做 QKV/Wo/MLP；
+- 12-case pilot 的每个 cell 先做 1 个 position（1,944 runs），还是直接 3 个 position（5,832 runs）；
+- clean 100% 失败时，是否只保留 1.5B。
