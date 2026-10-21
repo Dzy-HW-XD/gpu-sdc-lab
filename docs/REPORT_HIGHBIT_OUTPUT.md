@@ -4,7 +4,7 @@
 实验：单元素 FP32 activation high-bit fault injection  
 模型：Pythia-160M / 410M / 1B，Qwen2.5-0.5B / 1.5B  
 范围：prompt prefill 后注错，greedy decode 观察输出  
-状态：5 个模型全部完成，1,944 个生成结果，无 OOM
+状态：pilot；5 个模型全部完成，1,944 个生成，无 OOM；**严格 clean 完全正确标注尚未完成，当前统计不作为最终结论**。
 
 ## 0. 基线有效性说明（重要修正）
 
@@ -18,11 +18,11 @@
 | Qwen2.5-0.5B | 23/24 = 95.8% | 是 |
 | Qwen2.5-1.5B | 24/24 = 100.0% | 是 |
 
-因此本报告的主结论应限定在 **Qwen2.5-0.5B / 1.5B**：
+因此本报告当前可解释的结果应限定在 **Qwen2.5-0.5B / 1.5B**。但即使对 Qwen，下面的数字也只是**目标答案匹配口径下的 provisional pilot**；在完成 clean 输出的严格“完全正确”标注之前，不应作为最终统计。
 
-| Qwen 主结果 | 数值 |
+| Qwen 当前高基线 pilot | 数值 |
 |---|---:|
-| clean-correct prompt-model pairs | 47/48 = 97.9% |
+| clean-correct（目标答案匹配） | 47/48 = 97.9% |
 | 有效 fault runs | 564 |
 | catastrophic | 172/564 = **30.5%**（95% CI 26.8–34.4%） |
 | literal garble（全部 576 runs） | 17/576 = **3.0%** |
@@ -35,7 +35,7 @@
 
 **Pythia 的结果只能作为低基线压力测试，不能用于模型鲁棒性排名，也不能单独证明“高位 bit 导致错误”的普遍规律。** 尤其 Pythia-160M 的 41.7% catastrophic 只基于 11 条它本来能答的 prompt，样本偏差很大。
 
-当前报告后面的全模型表仍然保留，用于展示原始观测和基线与 fault 的差异；但**对外引用时应优先使用 Qwen-only 主结果，并明确 Pythia 是低基线压力测试**。
+当前报告后面的全模型表仍然保留，用于展示原始观测和基线与 fault 的差异；但**对外引用前必须完成 clean 完全正确筛选**，不能把 31.4% 或 Qwen-only 30.5% 当作最终结论。
 
 ### 需要的正式实验修正
 
@@ -55,7 +55,7 @@
 结论如下：
 
 - **乱码存在，但不是主要失败模式。** 1,440 个 fault run 中，literal garble 为 30 个（2.1%）。Qwen2.5-0.5B 最高（12/288 = 4.2%），表现为语言漂移、越南语重复、退化重复；Qwen2.5-1.5B 出现中文题干片段和全角标点。
-- **“答案完全错误”更常见。** 在全部 1,140 个 clean-correct run 中，358 个 catastrophic（31.4%）；但这是五个模型的混合口径，**不能作为主结论**。主结论见第 0 节：Qwen-only 为 172/564 = **30.5%**。Pythia-160M 的 41.7% 只基于 11 条 clean-correct prompt，应视为低基线压力测试。
+- **“答案完全错误”更常见。** 在全部 1,140 个目标答案匹配的 clean run 中，358 个 catastrophic（31.4%）；但这是五个模型的混合口径，**不能作为主结论**。当前最高基线的 Qwen pilot 为 172/564 = **30.5%**，但在完成 clean 完全正确严格标注之前仍是 provisional。Pythia-160M 的 41.7% 只基于 11 条 clean-correct prompt，应视为低基线压力测试。
 - **高位 bit 不是越高越坏。** bit 28/29 在 middle/late 层最容易让答案消失；bit 30 在 early 层很强；bit 30/31 在 late 层通常几乎无影响。唯一明显例外是 Pythia-160M 的 early bit 31。
 - **没有 NaN/Inf。** 1,440 个 fault run 的 logits 全部 finite，所有注入值 finite，没有 runtime error。只监控 NaN/Inf 会漏掉这些语义错误。
 - **PPL 也不够。** median PPL ratio 约 1.0；clean continuation 在 fault model 下仍可能高概率，但 greedy 输出已经答错。需要输出级 answer/consistency 检查。
@@ -136,6 +136,21 @@ clean-correct prompt 数：
 | Pythia-1B | 4/4 | 2/4 | 4/4 | 2/4 | 4/4 | 4/4 | 20/24 |
 | Qwen2.5-0.5B | 4/4 | 4/4 | 4/4 | 4/4 | 3/4 | 4/4 | 23/24 |
 | Qwen2.5-1.5B | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 | 4/4 | 24/24 |
+
+> **注意：这里的 `clean-correct` 是“目标答案匹配”，不是“整段输出完全正确”。**
+> 判定只要求目标答案出现在前 4 个 token 内，允许后续继续生成。例如
+> Pythia-160M 的 `fact_02` clean 输出以 `Berlin.` 开头，但后面接着
+> `The city of Rome is the capital...`；它会被当前规则算作 clean-correct，
+> 但如果要求整段输出完全正确，则不应算。
+>
+> 因此，**当前所有 catastrophic 数字仍然是 pilot 口径**。正式统计应先对
+> clean 输出做严格标注，只保留“完全正确”的 prompt-model pair，再重新计算。
+> 严格标注有两种可选定义：
+>
+> 1. **目标答案完全正确（推荐）**：目标答案正确，且同一答案位置没有自相矛盾或替代答案；允许后续自由续写。这个口径适合本实验，因为研究对象是答案是否被破坏。
+> 2. **整段输出完全正确**：整段 continuation 都需人工/LLM judge 判为正确。这个口径更严格，但 Pythia 的 rambling 输出会大量不合格，可能导致有效样本过少。
+>
+> 当前报告的主结论应视为 pilot；正式实验需要先完成 clean 严格标注，再做 baseline gate（≥90%）和注错统计。
 
 这张表说明：**Pythia-160M/410M 的 arithmetic 基线确实很弱，Pythia-160M 的 continuation 也只有 1/4；但 Qwen2.5-0.5B/1.5B 基本能正确回答这些问题。** 因此不能简单说“所有模型本身都不会答”。
 
@@ -510,7 +525,7 @@ Sham 和 clean 重复说明 hook 本身没有副作用；fault 值 finite 说明
 **结论：**
 
 - 高位 activation bit flip **会产生字面乱码**，但比例较低（全模型 2.1%；Qwen-only 3.0%）。
-- 更常见的是**文本流畅但答案完全错误**。在通过 baseline gate 的 Qwen2.5-0.5B/1.5B 上，catastrophic 为 172/564 = **30.5%**；Pythia 的低基线结果不能作为主结论。
+- 更常见的是**文本流畅但答案完全错误**。在 Qwen2.5-0.5B/1.5B 的目标答案匹配口径上，catastrophic 为 172/564 = **30.5%**；这是当前最高基线 pilot，仍需 clean 完全正确严格标注后复算。Pythia 的低基线结果不能作为主结论。
 - 失败模式强烈依赖 **bit × 层**，没有单调的“高位更严重”规律。
 - 1,440 个 fault run 全部 finite，**NaN/Inf 监控完全漏报**；PPL ratio 也不足以检测。
 - 运行时检测应至少包含：答案一致性、输出与 clean 的字符/语义相似度、异常语言/重复检测，以及 NaN/Inf 作为必要但不充分的补充。

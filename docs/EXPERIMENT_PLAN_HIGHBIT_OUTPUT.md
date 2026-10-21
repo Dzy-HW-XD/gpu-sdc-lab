@@ -203,3 +203,9 @@ the primary model comparison. The primary result is restricted to
 Qwen2.5-0.5B and Qwen2.5-1.5B (23/24 and 24/24); see
 `docs/REPORT_HIGHBIT_OUTPUT.md` §0. A formal rerun should calibrate prompts
 first, use ≥90% clean accuracy, and increase the prompt count to 60–100.
+
+The pilot's `clean-correct` label is only a **target-answer position check**,
+not a full-output correctness label. Before final statistics, all clean
+outputs must be relabeled with an explicit **clean fully-correct** rubric
+(answer-level or whole-output, decided in advance), and only those
+prompt-model pairs may enter the injection statistics.
