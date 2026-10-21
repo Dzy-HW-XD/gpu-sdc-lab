@@ -85,7 +85,11 @@ def main():
     by_model = read_csv(os.path.join(base, "summary_by_model.csv"))
 
     model_n = {r["model_short"]: int(r["n_eval"]) // 12 for r in by_model}
-    row_labels = ["%s (%d/24)" % (MODEL_LABEL[m], model_n[m]) for m in MODEL_ORDER]
+    row_labels = [
+        "%s (%d/24)%s" % (MODEL_LABEL[m], model_n[m],
+                          " *" if model_n[m] / 24 < 0.90 else "")
+        for m in MODEL_ORDER
+    ]
 
     mat_bit = np.array([[val(by_bit, m, bit=str(b)) for b in BITS]
                         for m in MODEL_ORDER])
@@ -102,7 +106,9 @@ def main():
 
     im = draw_heat(ax_a, mat_bit, row_labels, [str(b) for b in BITS],
                    "(a)  catastrophic rate by bit", "FP32 bit position")
-    draw_heat(ax_b, mat_layer, [MODEL_LABEL[m] for m in MODEL_ORDER], LAYERS,
+    b_labels = [MODEL_LABEL[m] + (" *" if model_n[m] / 24 < 0.90 else "")
+                for m in MODEL_ORDER]
+    draw_heat(ax_b, mat_layer, b_labels, LAYERS,
               "(b)  catastrophic rate by depth", "injection depth")
     ax_b.tick_params(axis="y", labelsize=6.6, pad=2)
 
@@ -163,7 +169,7 @@ def main():
              ha="center", va="top", fontsize=7.2, color="0.35")
     fig.text(0.5, 0.035,
              "catastrophic = literal garble or answer absent; partial = answer present but altered; "
-             "percentages are rounded.",
+             "* clean-correct <90%, exploratory only; percentages are rounded.",
              ha="center", va="bottom", fontsize=6.3, color="0.35")
 
     outdir = os.path.join(base, "figures")

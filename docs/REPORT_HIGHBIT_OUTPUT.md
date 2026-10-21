@@ -6,6 +6,45 @@
 范围：prompt prefill 后注错，greedy decode 观察输出  
 状态：5 个模型全部完成，1,944 个生成结果，无 OOM
 
+## 0. 基线有效性说明（重要修正）
+
+当前 24 条 prompt 对 Pythia base 模型偏难，因此**不能把五个模型混在一起得出一个 31.4% 的“LLM 注错错误率”**。按 clean 正确率设一个最基本的 baseline gate（≥90%）：
+
+| 模型 | clean 正确率 | 是否通过 baseline gate |
+|---|---:|---|
+| Pythia-160M | 11/24 = 45.8% | 否 |
+| Pythia-410M | 17/24 = 70.8% | 否 |
+| Pythia-1B | 20/24 = 83.3% | 否 |
+| Qwen2.5-0.5B | 23/24 = 95.8% | 是 |
+| Qwen2.5-1.5B | 24/24 = 100.0% | 是 |
+
+因此本报告的主结论应限定在 **Qwen2.5-0.5B / 1.5B**：
+
+| Qwen 主结果 | 数值 |
+|---|---:|
+| clean-correct prompt-model pairs | 47/48 = 97.9% |
+| 有效 fault runs | 564 |
+| catastrophic | 172/564 = **30.5%**（95% CI 26.8–34.4%） |
+| literal garble（全部 576 runs） | 17/576 = **3.0%** |
+| wrong | 171/564 = 30.3% |
+| partial | 54/564 = 9.6% |
+| preserved | 338/564 = 59.9% |
+| clean 绝对正确率 | 47/48 = 97.9% |
+| fault 后绝对正确率 | 403/576 = 70.0% |
+| 绝对正确率下降 | −27.9 pp |
+
+**Pythia 的结果只能作为低基线压力测试，不能用于模型鲁棒性排名，也不能单独证明“高位 bit 导致错误”的普遍规律。** 尤其 Pythia-160M 的 41.7% catastrophic 只基于 11 条它本来能答的 prompt，样本偏差很大。
+
+当前报告后面的全模型表仍然保留，用于展示原始观测和基线与 fault 的差异；但**对外引用时应优先使用 Qwen-only 主结果，并明确 Pythia 是低基线压力测试**。
+
+### 需要的正式实验修正
+
+- 先做 baseline calibration，只保留 clean 正确率 ≥90% 的模型和 prompt；
+- 至少扩到 60–100 条 prompt，避免 24 条带来的宽置信区间；
+- 使用 matched prompt set，让模型间比较建立在同一批 clean-correct 题目上；
+- 同时报告 conditional catastrophic rate 和绝对正确率，不能只报 conditional；
+- 如果目标是研究通用 LLM，优先使用 instruction-tuned 模型；Pythia base 不适合作为主模型。
+
 ## 摘要
 
 本实验回答两个问题：
@@ -16,7 +55,7 @@
 结论如下：
 
 - **乱码存在，但不是主要失败模式。** 1,440 个 fault run 中，literal garble 为 30 个（2.1%）。Qwen2.5-0.5B 最高（12/288 = 4.2%），表现为语言漂移、越南语重复、退化重复；Qwen2.5-1.5B 出现中文题干片段和全角标点。
-- **“答案完全错误”更常见。** 在 1,140 个 clean-correct run 中，358 个 catastrophic（31.4%，95% CI 28.8–34.2%）。per-model catastrophic rate 为 24.7%–41.7%。
+- **“答案完全错误”更常见。** 在全部 1,140 个 clean-correct run 中，358 个 catastrophic（31.4%）；但这是五个模型的混合口径，**不能作为主结论**。主结论见第 0 节：Qwen-only 为 172/564 = **30.5%**。Pythia-160M 的 41.7% 只基于 11 条 clean-correct prompt，应视为低基线压力测试。
 - **高位 bit 不是越高越坏。** bit 28/29 在 middle/late 层最容易让答案消失；bit 30 在 early 层很强；bit 30/31 在 late 层通常几乎无影响。唯一明显例外是 Pythia-160M 的 early bit 31。
 - **没有 NaN/Inf。** 1,440 个 fault run 的 logits 全部 finite，所有注入值 finite，没有 runtime error。只监控 NaN/Inf 会漏掉这些语义错误。
 - **PPL 也不够。** median PPL ratio 约 1.0；clean continuation 在 fault model 下仍可能高概率，但 greedy 输出已经答错。需要输出级 answer/consistency 检查。
@@ -25,7 +64,7 @@
 
 矢量版：[`figures/highbit_output_summary.pdf`](figures/highbit_output_summary.pdf)
 
-图注：**(a)** 各模型在 bit 28–31 上的 catastrophic rate，按 E/M/L 三层聚合；**(b)** 各模型在 E/M/L 注入深度上的 catastrophic rate，按 bit 28–31 聚合；**(c)** bit 28–29 合并后的结局构成（garbled / wrong / partial / preserved）。行标签括号内为 clean-correct prompt 数；**(c)** 右侧 `n` 为对应有效 run 数。所有比率都基于 clean-correct prompt；garbled 在 **(c)** 中优先归类，因此与 wrong 不重复计数。
+图注：**(a)** 各模型在 bit 28–31 上的 catastrophic rate，按 E/M/L 三层聚合；**(b)** 各模型在 E/M/L 注入深度上的 catastrophic rate，按 bit 28–31 聚合；**(c)** bit 28–29 合并后的结局构成（garbled / wrong / partial / preserved）。行标签括号内为 clean-correct prompt 数；`*` 表示 clean-correct <90%，仅作低基线 exploratory，不进入主结论；**(c)** 右侧 `n` 为对应有效 run 数。所有比率都基于 clean-correct prompt；garbled 在 **(c)** 中优先归类，因此与 wrong 不重复计数。
 
 ---
 
@@ -470,8 +509,8 @@ Sham 和 clean 重复说明 hook 本身没有副作用；fault 值 finite 说明
 
 **结论：**
 
-- 高位 activation bit flip **会产生字面乱码**，但比例较低（2.1%）。
-- 更常见的是**文本流畅但答案完全错误**，总体 31.4%；per-model 24.7%–41.7%。
+- 高位 activation bit flip **会产生字面乱码**，但比例较低（全模型 2.1%；Qwen-only 3.0%）。
+- 更常见的是**文本流畅但答案完全错误**。在通过 baseline gate 的 Qwen2.5-0.5B/1.5B 上，catastrophic 为 172/564 = **30.5%**；Pythia 的低基线结果不能作为主结论。
 - 失败模式强烈依赖 **bit × 层**，没有单调的“高位更严重”规律。
 - 1,440 个 fault run 全部 finite，**NaN/Inf 监控完全漏报**；PPL ratio 也不足以检测。
 - 运行时检测应至少包含：答案一致性、输出与 clean 的字符/语义相似度、异常语言/重复检测，以及 NaN/Inf 作为必要但不充分的补充。

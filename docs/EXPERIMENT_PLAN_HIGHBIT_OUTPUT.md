@@ -193,3 +193,13 @@ and `docs/figures/highbit_output_summary.pdf`.
 
 Execution begins with the Pythia-160M pilot; the other models follow if the
 measured runtime is acceptable.
+
+### Post-hoc baseline-validity correction
+
+After execution, the clean-correct rates showed that Pythia-160M (11/24),
+Pythia-410M (17/24), and Pythia-1B (20/24) do not pass a 90% clean-accuracy
+gate. They are retained as low-baseline stress tests but are **not** used for
+the primary model comparison. The primary result is restricted to
+Qwen2.5-0.5B and Qwen2.5-1.5B (23/24 and 24/24); see
+`docs/REPORT_HIGHBIT_OUTPUT.md` §0. A formal rerun should calibrate prompts
+first, use ≥90% clean accuracy, and increase the prompt count to 60–100.
