@@ -284,4 +284,5 @@ Links:
 - [docs/EXPERIMENT_PLAN_QKV_V_KERNEL_IMPLEMENTATIONS.md](docs/EXPERIMENT_PLAN_QKV_V_KERNEL_IMPLEMENTATIONS.md) — qkv_v kernel-implementation variant experiment design
 - [docs/REPORT_QKV_V_BLOCK_HMMA.md](docs/REPORT_QKV_V_BLOCK_HMMA.md) — qkv_v HMMA single-block SDC/DUE/Mask report
 - [docs/REPORT_QKV_V_FULLSTACK_HMMA.md](docs/REPORT_QKV_V_FULLSTACK_HMMA.md) — layer14→layer27 C0–C3 full-stack report
+- [docs/REPORT_QKV_V_KERNEL_COMPARISON.md](docs/REPORT_QKV_V_KERNEL_COMPARISON.md) — K0/K1/K2a/K2b/K3 kernel comparison report
 - [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — scalar GEMM archive

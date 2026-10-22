@@ -1,0 +1,306 @@
+{
+  "K1": {
+    "n": 10,
+    "all_equal": true,
+    "rows": [
+      {
+        "file": "clean_00.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_01.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_02.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_03.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_04.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_05.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_06.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_07.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_08.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_09.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      }
+    ]
+  },
+  "K2a": {
+    "n": 10,
+    "all_equal": true,
+    "rows": [
+      {
+        "file": "clean_00.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_01.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_02.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_03.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_04.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_05.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_06.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_07.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_08.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_09.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      }
+    ]
+  },
+  "K2b": {
+    "n": 10,
+    "all_equal": true,
+    "rows": [
+      {
+        "file": "clean_00.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_01.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_02.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_03.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_04.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_05.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_06.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_07.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_08.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_09.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      }
+    ]
+  },
+  "K3": {
+    "n": 10,
+    "all_equal": true,
+    "rows": [
+      {
+        "file": "clean_00.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_01.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_02.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_03.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_04.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_05.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_06.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_07.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_08.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      },
+      {
+        "file": "clean_09.pt",
+        "V": true,
+        "attn_output": true,
+        "block_output": true,
+        "final_output": true
+      }
+    ]
+  }
+}
