@@ -185,16 +185,20 @@ claim:
 
 ### 4.5 Actual numeric gap to golden
 
-`scripts/attention_golden_delta_hexbin.py` produces
+`scripts/attention_golden_delta_hexbin_all.py` produces
 `summary/golden_vs_delta_hexbin.pdf/png`: five log-log hexbin panels, one per
-stage, with x = `|Y_golden|`, y = `|delta Y|`, and the L4 boundary
-`|delta Y| = 1e-4 + 1e-3|Y|` overlaid as a dashed line.  This directly shows
-the **actual magnitude** of the deviation, not just whether it crosses L4.
+stage, with x = `|Y_golden|` and y = `|delta Y|`.  The L4 threshold line is
+**not drawn** and points are **not filtered by L4**; every finite, strictly
+positive `|delta Y|` element in the representative run is shown.  This directly
+shows the actual magnitude of the deviation, not just whether it crosses L4.
 
 The current version uses the representative run of each cell (the run with
 the largest relative L2 error), so it is a worst-case illustration rather
-than an all-run distribution; the footer states this.  Non-finite outputs
-and exactly zero golden values are excluded from the hexbin.
+than an all-run distribution; the footer states this.  Exactly zero `|delta Y|`
+and non-finite outputs cannot be represented on the log axis and are excluded
+from the hexbin; their counts are not used to filter the remaining points.
+The previous version with the L4 line is retained under
+`summary/archive/golden_vs_delta_hexbin_with_l4.*`.
 
 ## 5. Outputs
 
@@ -275,15 +279,15 @@ Actual numeric gap:
   \centering
   \includegraphics[width=\textwidth]{figures/golden_vs_delta_hexbin.pdf}
   \caption{Actual numerical gap to golden.  Each panel is a log-log hexbin
-  of all L4-affected elements in the representative run of every
+  of all finite, strictly positive elements in the representative run of every
   (stage, bit, position) cell (largest relative L2 per cell); the
   $x$-axis is $|Y_{\mathrm{golden}}|$ and the $y$-axis is
-  $|\Delta Y|$.  The dashed line is the L4 boundary
-  $|\Delta Y| = 10^{-4} + 10^{-3}|Y|$.  QKV-Q/QK/PV remain in the
+  $|\Delta Y|$.  The L4 threshold is not drawn and does not filter the data.
+  QKV-Q/QK/PV remain in the
   1--$10^4$ range, whereas QKV-V/PV reach $10^{20}$--$10^{38}$ through
-  discrete catastrophic-error bands.  Non-finite outputs and exactly zero
-  golden values are excluded; this is a worst-case representative sample,
-  not an all-run distribution.}
+  discrete catastrophic-error bands.  Exactly zero $\Delta Y$ and non-finite
+  outputs are excluded from the log axes; this is a worst-case representative
+  sample, not an all-run distribution.}
   \label{fig:attn-golden-delta}
 \end{figure}
 ```
