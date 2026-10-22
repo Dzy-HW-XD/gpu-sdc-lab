@@ -214,20 +214,66 @@ K0 与 K1 的 clean 差异：
 
 ---
 
-## 9. 统一图
+## 9. 统一图与两张扩散图
+
+### 9.1 统一 kernel 结果
 
 ![Kernel comparison](figures/kernel_comparison_summary.png)
 
-矢量版：
+矢量版：`figures/kernel_comparison_summary.pdf`
 
-`figures/kernel_comparison_summary.pdf`
-
-### 中文解释
+**中文解释：**
 
 - **(a) D1 outcome at C3**：五个 kernel 在 layer27 输出上的 SDC/DUE/Masked/Crash 组成。所有 variant 都以 SDC 为绝对主体；DUE 只在 bit30 的 NaN/Inf 站点出现；Crash 为 0。  
 - **(b) Masked and DUE**：蓝色是 D0 下的 Masked 数量，橙色是 D1 下的 DUE 数量。K2a 的 Masked 最多（5），K0 的 DUE 最多（6），K3 本次样本没有 DUE。这个差异包含随机站点抽样，不等于 kernel 的固有安全性排序。  
 - **(c) spatial propagation**：从 C0 到 C3 的中位 mismatch 元素数。C0 都只有 1 个元素；到 C1 迅速扩散到 10^4 量级，C3 达到 10^6 量级；五条曲线几乎重合，说明“单个 V 元素错误扩散到全序列”这一宏观规律不随 kernel 明显改变。图中是中位数，不代表每个 run 都单调扩散：K2b 的 `K2b_b29_057` 在 C0/C1 为 SDC，C2/C3 恢复为 Masked。  
 - **(d) clean difference vs K1**：K0 和 K2b 的 clean 输出相对 K1 的数值差异；K2a/K3 的 clean 与 K1 完全相同，所以没有画在图中（相对误差为 0）。K0 的差异来自 cuBLAS/bias epilogue；K2b 的差异来自 K tile 改变累加顺序。  
+
+### 9.2 元素扩散图：每一层有多少元素被改变
+
+![Element diffusion](figures/diffusion_element_count.png)
+
+矢量版：`figures/diffusion_element_count.pdf`
+
+**中文解释：**
+
+- 横轴是 C0 → C1 → C2 → C3，纵轴是该检查点相对各自 clean 的**中位 mismatch 元素数**；
+- C0 只有 **1 个 V 元素**改变；
+- 到 C1，中位数已经达到 **2.5×10^4–4.8×10^4** 个元素；
+- C2 继续达到 **6.0×10^4–1.12×10^5**；
+- C3 达到 **1.53×10^6–1.62×10^6**，约占总输出元素的 **44%–46%**；
+- 右图把同一组数据换成“改变元素比例”，所以 C0 约 `1.7×10^-6`，C3 约 `0.44–0.46`；
+- 五个 kernel 的曲线形状基本一致；K2b 的 C1/C2 中位数略低，部分来自它不同的 K tile，部分来自 K2b 那个在 C2 恢复的站点；
+- 阴影是 IQR，说明单个 run 的扩散范围仍然很大，不能只看中位数。
+
+这张图回答的是：**一个 GEMM 元素错误经过 attention、layer14 block 和后续 13 层后，影响范围从 1 个元素扩散到约 150 万个元素。**
+
+### 9.3 数值差异图：扩散后的误差有多大
+
+![Numeric difference](figures/diffusion_numeric_magnitude.png)
+
+矢量版：`figures/diffusion_numeric_magnitude.pdf`
+
+**中文解释：**
+
+- 左图是每个检查点的 **median max |ΔY|**；
+- 右图是 **median relative L2 error**；
+- 数值图只画中位数，不画 IQR：bit30 的尾部可以到 `10^30` 以上，IQR 会把正常量级压缩到不可读；
+- 中位 max |ΔY|：
+  - C0：约 **0.36–0.65**；
+  - C1：约 **0.031–0.032**；
+  - C2：约 **0.125**；
+  - C3：**5.0**；
+- 中位 relative L2：
+  - C0：约 **4.8×10^-4–8.8×10^-4**；
+  - C1：约 **3.2×10^-4–5.5×10^-4**；
+  - C2：约 **7.9×10^-5–1.2×10^-4**；
+  - C3：约 **9.9×10^-3–1.05×10^-2**；
+- C1/C2 的中位单元素误差比 C0 小，不是“错误消失”，而是单一 V 元素的大误差被 BF16 attention/Wo/MLP 重新分配成更多、但单个幅值更小的误差；
+- 到 C3，误差重新集中并放大，中位相对 L2 比 C0 高约一个数量级；
+- 所有 kernel 的数值曲线几乎重合，说明 kernel 实现改变的是“哪些站点被 mask/NaN”，而不是宏观扩散量级。
+
+这张图回答的是：**错误扩散到百万级元素后，单个元素的数值误差和整体相对误差大概在哪个量级。**
 
 ---
 
@@ -274,7 +320,11 @@ K0 与 K1 的 clean 差异：
 | 随机站点 | `results/qkv_v_kernels/sites.csv` |
 | sham | `results/qkv_v_kernels/sham.csv` |
 | clean 控制 | `results/qkv_v_kernels/clean_controls/` |
-| 图 | `results/qkv_v_kernels/figures/kernel_comparison_summary.*` |
-| 图副本 | `docs/figures/kernel_comparison_summary.*` |
+| 统一图 | `results/qkv_v_kernels/figures/kernel_comparison_summary.*` |
+| 元素扩散图 | `results/qkv_v_kernels/figures/diffusion_element_count.*` |
+| 数值差异图 | `results/qkv_v_kernels/figures/diffusion_numeric_magnitude.*` |
+| 扩散汇总 | `results/qkv_v_kernels/diffusion_summary.json` |
+| 图副本 | `docs/figures/kernel_comparison_summary.*`、`docs/figures/diffusion_*` |
 | CUTLASS source | `workloads/qkv_v_cutlass.cu` |
 | campaign | `scripts/qkv_v_kernel_campaign.py` |
+| 扩散绘图 | `scripts/qkv_v_diffusion_plots.py` |
