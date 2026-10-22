@@ -88,6 +88,19 @@ def run_block(model, layer_idx, hidden_in, mask, pos_emb, position_ids):
     }
 
 
+def run_downstream(model, start_layer, hidden, mask, pos_emb, position_ids):
+    """Run clean decoder layers start_layer+1 ... last; no injection."""
+    for i in range(start_layer + 1, len(model.model.layers)):
+        hidden = model.model.layers[i](
+            hidden,
+            attention_mask=mask,
+            position_ids=position_ids,
+            use_cache=False,
+            position_embeddings=pos_emb,
+        )
+    return hidden
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-1.5B-Instruct")
@@ -144,11 +157,20 @@ def main():
         if input_hidden is None:
             raise RuntimeError("layer not reached")
 
-        # A second clean run checks block replay determinism.
+        # Full forward tail: layer15 ... layer27, clean.
+        final_output = run_downstream(
+            model, args.layer, outs["block_output"], mask, pos_emb, position_ids)
+        outs["final_output"] = final_output
+
+        # A second clean run checks block replay determinism and C3 determinism.
         outs2 = run_block(model, args.layer, input_hidden, mask, pos_emb, position_ids)
         for k in ("V", "attn_context", "attn_output", "block_output"):
             if not torch.equal(outs[k], outs2[k]):
                 raise RuntimeError("non-deterministic checkpoint: " + k)
+        outs2["final_output"] = run_downstream(
+            model, args.layer, outs2["block_output"], mask, pos_emb, position_ids)
+        if not torch.equal(outs["final_output"], outs2["final_output"]):
+            raise RuntimeError("non-deterministic checkpoint: final_output")
 
     os.makedirs(args.out_dir, exist_ok=True)
     path = os.path.join(args.out_dir, "layer%02d.pt" % args.layer)
@@ -162,7 +184,7 @@ def main():
         "position_embeddings": tuple(t.detach().cpu() for t in pos_emb),
         "causal_mask": mask.detach().cpu() if torch.is_tensor(mask) else mask,
         "clean": {k: outs[k].detach().cpu() for k in
-                  ("V", "attn_context", "attn_output", "block_output")},
+                  ("V", "attn_context", "attn_output", "block_output", "final_output")},
     }, path)
     meta = {
         "layer": args.layer,
@@ -173,7 +195,9 @@ def main():
         "attn_context_shape": list(outs["attn_context"].shape),
         "attn_output_shape": list(outs["attn_output"].shape),
         "block_output_shape": list(outs["block_output"].shape),
+        "final_output_shape": list(outs["final_output"].shape),
         "block_output_checksum": int(outs["block_output"].float().sum().item()),
+        "final_output_checksum": int(outs["final_output"].float().sum().item()),
     }
     json.dump(meta, open(os.path.join(args.out_dir, "layer%02d.json" % args.layer),
                          "w", encoding="utf-8"), indent=2)

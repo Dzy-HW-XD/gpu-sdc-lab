@@ -281,5 +281,7 @@ Links:
 - [docs/REPORT_AGENT_SOFTWARE_GEMM.md](docs/REPORT_AGENT_SOFTWARE_GEMM.md) — 12-case long-context software GEMM injection
 - [docs/EXPERIMENT_PLAN_KERNEL_SVF_AVF.md](docs/EXPERIMENT_PLAN_KERNEL_SVF_AVF.md) — HMMA instruction-level fault propagation and kernel-variant plan
 - [docs/EXPERIMENT_PLAN_QKV_V_HMMA.md](docs/EXPERIMENT_PLAN_QKV_V_HMMA.md) — qkv_v HMMA injection with SDC/DUE/Mask at attention and block outputs
+- [docs/EXPERIMENT_PLAN_QKV_V_KERNEL_IMPLEMENTATIONS.md](docs/EXPERIMENT_PLAN_QKV_V_KERNEL_IMPLEMENTATIONS.md) — qkv_v kernel-implementation variant experiment design
 - [docs/REPORT_QKV_V_BLOCK_HMMA.md](docs/REPORT_QKV_V_BLOCK_HMMA.md) — qkv_v HMMA single-block SDC/DUE/Mask report
+- [docs/REPORT_QKV_V_FULLSTACK_HMMA.md](docs/REPORT_QKV_V_FULLSTACK_HMMA.md) — layer14→layer27 C0–C3 full-stack report
 - [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — scalar GEMM archive
