@@ -1,0 +1,40 @@
+{
+  "n_valid": 405,
+  "outcome_block": {
+    "SDC": 398,
+    "Mask": 7
+  },
+  "outcome_attn": {
+    "SDC": 398,
+    "Mask": 7
+  },
+  "outcome_v": {
+    "SDC": 398,
+    "Mask": 7
+  },
+  "sdc_rate": 0.9827160493827161,
+  "mask_rate": 0.01728395061728395,
+  "due_rate": 0.0,
+  "sdc_ci": [
+    0.9647575141151652,
+    0.991603091067869
+  ],
+  "mask_ci": [
+    0.00839690893213094,
+    0.03524248588483485
+  ],
+  "nan_inf_rows": 12,
+  "d1_due_det": 12,
+  "d1_sdc": 386,
+  "d1_mask": 7,
+  "sdc_finite": 386,
+  "sdc_nonfinite": 12,
+  "sdc_maxabs_gt_1e10": 119,
+  "sdc_maxabs_median": 1.0,
+  "sdc_maxabs_max": 1.0567362566490081e+38,
+  "clean_controls": 30,
+  "clean_ok": 30,
+  "sham_controls": 27,
+  "sham_mask": 27,
+  "sham_injected": 27
+}

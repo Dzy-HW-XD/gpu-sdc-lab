@@ -279,4 +279,7 @@ Links:
 - [docs/EXPERIMENT_PLAN_AGENT_GEMM.md](docs/EXPERIMENT_PLAN_AGENT_GEMM.md) — long-context agent GEMM injection plan
 - [docs/PHASE0_AGENT_NVBITFI.md](docs/PHASE0_AGENT_NVBITFI.md) — Phase 0 NVBitFI kernel mapping and injection
 - [docs/REPORT_AGENT_SOFTWARE_GEMM.md](docs/REPORT_AGENT_SOFTWARE_GEMM.md) — 12-case long-context software GEMM injection
+- [docs/EXPERIMENT_PLAN_KERNEL_SVF_AVF.md](docs/EXPERIMENT_PLAN_KERNEL_SVF_AVF.md) — HMMA instruction-level fault propagation and kernel-variant plan
+- [docs/EXPERIMENT_PLAN_QKV_V_HMMA.md](docs/EXPERIMENT_PLAN_QKV_V_HMMA.md) — qkv_v HMMA injection with SDC/DUE/Mask at attention and block outputs
+- [docs/REPORT_QKV_V_BLOCK_HMMA.md](docs/REPORT_QKV_V_BLOCK_HMMA.md) — qkv_v HMMA single-block SDC/DUE/Mask report
 - [docs/ARCHIVE_scalar_gemm.md](docs/ARCHIVE_scalar_gemm.md) — scalar GEMM archive
